@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#f0a30a" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="太阳神课程表" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>太阳神的随身陪伴课程表</title>
+  <link rel="stylesheet" href="app.css" />
+    <meta name="AIGC" content='{"AIGC":{"Label":"1","ContentProducer":"WUSIGRAM","ProduceID":"6X0Mz/iR/lfbwfEvu1Z0jF5+w4GKzpFZhbvN9aY6SQs=","ReservedCode1":"JcY/ayGmJlxBhEqlDF+LJT2chIswzvSluwVIhWAmvRzcPalZE9OuZeXBCZwxA3Lf2Mf/3RfTZr7nuuf6fwD2pw==","ContentPropagator":"","PropagateID":"","ReservedCode2":""}}'>
+</head>
+<body>
+  <!-- 背景层：渐变 / 自定义图片 / 遮罩 -->
+  <div class="bg-layer" id="bgLayer">
+    <div class="bg-image" id="bgImage"></div>
+    <div class="bg-tint"></div>
+  </div>
+
+  <!-- 天气氛围层：雨、雪、云、雾、阳光与闪电，只做视觉装饰 -->
+  <div class="weather-fx" id="weatherFx" aria-hidden="true" data-scene="clear" hidden>
+    <div class="wf-glow"></div>
+    <div class="wf-clouds" id="wfClouds"></div>
+    <div class="wf-particles" id="wfParticles"></div>
+    <div class="wf-flash"></div>
+  </div>
+
+  <!-- 太阳神 / 错误文档的漂浮装饰：只做氛围，不响应点击 -->
+  <div class="sun-decor" aria-hidden="true">
+    <span class="sd-sun sd-a">☀️</span>
+    <span class="sd-sun sd-b">🌞</span>
+    <span class="sd-ray sd-c">✦</span>
+    <span class="sd-ray sd-d">✧</span>
+    <span class="sd-cat sd-e">🐈‍⬛</span>
+    <span class="sd-cat sd-f">🐾</span>
+    <span class="sd-warn sd-g">⚠️</span>
+    <span class="sd-x sd-h">❌</span>
+    <span class="sd-kao sd-i">(๑•̀ㅂ•́)و✧</span>
+    <span class="sd-kao sd-j">ฅ^•ﻌ•^ฅ</span>
+  </div>
+
+  <!-- 顶部导航栏（全局规范：总高 100px，标题居中，左侧按钮，右侧留空） -->
+  <header class="app-header" id="appHeader">
+    <div class="header-inner">
+      <button class="header-btn" id="headerQuickBtn" type="button" aria-label="回到本周">☀</button>
+      <h1 class="header-title" id="headerTitle">☀️ 太阳神课程表</h1>
+      <button class="header-weather" id="headerWeather" type="button" aria-label="查看天气与穿搭">
+        <span id="headerWeatherIcon">🌤</span><span id="headerWeatherTemp">--°</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 提醒横幅：课前 / 下课 / 取外卖，从导航栏下方滑入 -->
+  <div class="remind-banner" id="remindBanner" hidden>
+    <div class="rb-inner" id="remindBannerInner"></div>
+  </div>
+
+  <main class="view-root" id="viewRoot">
+    <!-- ================= 课表视图 ================= -->
+    <section class="view is-active" id="view-schedule" data-title="太阳神课程表 ☀️">
+      <div class="week-switch">
+        <button class="wk-arrow" id="wkPrev" type="button" aria-label="上一周">‹</button>
+        <button class="wk-current" id="wkLabel" type="button">
+          <span class="wk-num" id="wkNum">第 1 周</span>
+          <span class="wk-date" id="wkDate">—</span>
+        </button>
+        <button class="wk-arrow" id="wkNext" type="button" aria-label="下一周">›</button>
+        <button class="wk-today" id="wkTodayBtn" type="button">☀ 本周</button>
+      </div>
+
+      <div class="timetable-card">
+        <div class="timetable-scroll" id="timetableScroll">
+          <div class="tt-grid" id="ttGrid"></div>
+        </div>
+      </div>
+
+      <div class="tt-tip">☀️ 点空白格召唤课程 · 点课程看详情 · 长按编辑 ฅ^•ﻌ•^ฅ</div>
+    </section>
+
+    <!-- ================= 今日视图 ================= -->
+    <section class="view" id="view-today" data-title="太阳神的一天 🐈">
+      <div class="today-hero">
+        <div class="fairy-lights" id="fairyLights" aria-hidden="true"></div>
+        <div class="hero-sunburst" aria-hidden="true"></div>
+        <div class="hero-cat" aria-hidden="true">🐈‍⬛</div>
+        <div class="hero-stamp" id="heroStamp">☀️ SUN MODE</div>
+        <div class="hero-top">
+          <div>
+            <div class="hero-date" id="todayDate">—</div>
+            <div class="hero-week" id="todayWeek">—</div>
+            <div class="hero-phase" id="heroPhase">🌅 清晨 · 晨光配色</div>
+            <div class="hero-mood" id="heroMood">太阳神说：今天也要发光 ☀️</div>
+          </div>
+          <div class="hero-emoji">🌞</div>
+        </div>
+        <div class="hero-count" id="todayCount">今天没有课，好好休息 ✨</div>
+        <div class="hero-next" id="todayNext" hidden>
+          <span class="hn-label">下一节</span>
+          <span class="hn-name" id="nextName">—</span>
+          <span class="hn-time" id="nextTime">--:--:--</span>
+        </div>
+
+        <!-- 天气与穿搭：读取手机定位后请求天气，失败时可在设置里手动选城市 -->
+        <div class="weather-card" id="weatherCard" role="button" tabindex="0" aria-label="查看天气与穿搭详情">
+          <span class="wc-icon" id="weatherIcon">🌤</span>
+          <span class="wc-main">
+            <span class="wc-line">
+              <span class="wc-temp" id="weatherTemp">--°</span>
+              <span class="wc-desc" id="weatherDesc">正在读取天气…</span>
+            </span>
+            <span class="wc-outfit" id="weatherOutfit">根据气温准备今天的穿搭</span>
+          </span>
+          <button class="wc-refresh" id="weatherRefresh" type="button" aria-label="刷新天气">↻</button>
+        </div>
+        <div class="wc-place" id="weatherPlace">定位中 · 数据来自手机定位 / Open-Meteo</div>
+      </div>
+
+      <!-- 猫猫播报：会随课程、天气、时段和预设换颜文字 -->
+      <button class="cat-whisper" id="catWhisper" type="button" aria-label="换一条猫猫播报">
+        <span class="cw-cat" id="catWhisperCat">🐈‍⬛</span>
+        <span class="cw-main">
+          <span class="cw-kao" id="catWhisperKao">(=^･ω･^=)</span>
+          <span class="cw-text" id="catWhisperText">猫猫正在读取太阳神的今日安排…</span>
+        </span>
+        <span class="cw-badge" id="catWhisperBadge">☀️ SUN</span>
+      </button>
+
+      <!-- 今日提醒时间表：课前 20 分钟 / 快下课 / 点外卖 -->
+      <div class="remind-plan" id="remindPlan">
+        <div class="rp-head">
+          <span class="rp-title">⚠️ 猫猫提醒</span>
+          <span class="rp-sub" id="remindPlanSub">—</span>
+        </div>
+        <div class="rp-list" id="remindPlanList"></div>
+        <button class="rp-more" id="btnRemindOverview" type="button">查看今日提醒时间表 ›</button>
+      </div>
+
+      <div class="today-list" id="todayList"></div>
+    </section>
+
+    <!-- ================= 今天吃啥（转盘）视图 ================= -->
+    <section class="view" id="view-food" data-title="太阳神吃啥 🍜">
+      <div class="food-hero">
+        <div class="fh-title">太阳神吃啥？转一转 🍥</div>
+        <div class="fh-sub">猫猫说：选不出来就交给命运，转到什么吃什么～ ฅ^•ﻌ•^ฅ</div>
+        <div class="fh-deco">🍽</div>
+      </div>
+
+      <div class="wheel-card">
+        <div class="wheel-stage" id="wheelStage">
+          <div class="wheel-pointer" aria-hidden="true"></div>
+          <canvas id="foodWheel" width="600" height="600" aria-label="吃饭转盘"></canvas>
+          <button class="wheel-center" id="wheelCenterBtn" type="button" aria-label="开始转动">转</button>
+        </div>
+
+        <div class="wheel-result" id="wheelResult">
+          <div class="wr-label">准备好了吗</div>
+          <div class="wr-name">点下面的按钮开转 🍚</div>
+          <div class="wr-cat">命运正在召唤</div>
+        </div>
+
+        <div class="wheel-actions">
+          <button class="btn primary" id="btnSpinWheel" type="button">🎯 开始转动</button>
+          <button class="btn ghost" id="btnFoodMenu" type="button">✏️ 菜单</button>
+        </div>
+
+        <div class="food-filters" id="foodFilters"></div>
+        <label class="food-avoid">
+          <input type="checkbox" id="foodAvoidRecent" />
+          <span>避开最近吃过的 3 次，换个新鲜口味</span>
+        </label>
+      </div>
+
+      <div class="food-history">
+        <div class="rp-head">
+          <span class="rp-title">🧾 最近吃过</span>
+          <button class="hist-clear" id="btnClearFoodHistory" type="button">清空</button>
+        </div>
+        <div class="hist-list" id="foodHistoryList"></div>
+      </div>
+
+      <div class="food-tip">💡 小提示：菜单可以自己改，最多 24 个选项；默认提前 30 分钟的外卖提醒也会把你带到这一页。</div>
+      <div class="page-bottom-space"></div>
+    </section>
+
+    <!-- ================= 导入视图 ================= -->
+    <section class="view" id="view-import" data-title="导入课表 📡">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="ph-emoji">📡</span>
+          <div class="ph-text">
+            <h2>☀️ 教务系统自动检测</h2>
+            <p>填入课表页面网址，自动抓取并识别课程表格</p>
+          </div>
+        </div>
+        <label class="field">
+          <span class="field-label">教务系统课表网址 🔗</span>
+          <input type="url" id="importUrl" class="input" placeholder="https://jw.example.edu.cn/timetable" autocomplete="off" />
+        </label>
+        <div class="row-btns">
+          <button class="btn primary" id="btnFetch" type="button">📡 开始检测</button>
+          <button class="btn ghost" id="btnFetchHelp" type="button">使用说明</button>
+        </div>
+        <div class="import-log" id="importLog" hidden></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span class="ph-emoji">📄</span>
+          <div class="ph-text">
+            <h2>📄 PDF 课表检测导入</h2>
+            <p>选择教务系统导出的 PDF，自动检测文字层并识别表格</p>
+          </div>
+        </div>
+        <div class="pdf-drop" id="pdfDrop" tabindex="0" role="button" aria-label="选择 PDF 课表文件">
+          <div class="pdf-drop-icon">📄</div>
+          <div class="pdf-drop-title" id="pdfDropTitle">点击选择 PDF 文件</div>
+          <div class="pdf-drop-sub" id="pdfDropSub">也可以把 PDF 拖到这里 · 支持多页 · ≤ 20MB</div>
+          <input type="file" id="pdfFileInput" accept="application/pdf,.pdf" hidden />
+        </div>
+        <div class="pdf-status" id="pdfStatus" hidden></div>
+        <div class="row-btns">
+          <button class="btn primary" id="btnPickPdf" type="button">📄 选择 PDF 课表</button>
+          <button class="btn ghost" id="btnPdfHelp" type="button">PDF 导入说明</button>
+        </div>
+        <div class="format-hint">
+          <strong>说明：</strong>PDF 必须是「文字版」（能选中文字）。扫描图片 PDF 没有文字层，会提示使用 OCR 或手动粘贴。识别结果会先预览，确认后再写入课表。
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span class="ph-emoji">📋</span>
+          <div class="ph-text">
+            <h2>📋 智能粘贴导入</h2>
+            <p>支持课表文本、教务网页源码、JSON 数据</p>
+          </div>
+        </div>
+        <textarea id="importPaste" class="textarea" rows="6" placeholder="① 每行一门课：课程名|教师|教室|周次|星期|节次|教材&#10;例：高等数学|张明|教学楼A302|1-16周|周一|1-2节|高等数学（第七版）&#10;② 或直接粘贴教务系统课表网页的 HTML 源码&#10;③ 或粘贴本应用导出的 JSON"></textarea>
+        <div class="row-btns">
+          <button class="btn primary" id="btnParsePaste" type="button">✨ 智能识别</button>
+          <button class="btn ghost" id="btnFillDemo" type="button">填入示例</button>
+        </div>
+        <div class="format-hint">
+          <strong>文本字段格式：</strong>课程名 | 教师 | 教室 | 周次 | 星期 | 节次 | 教材（后三项可省略，用空格或逗号分隔也支持）
+        </div>
+      </div>
+
+      <div class="panel soft">
+        <div class="panel-head">
+          <span class="ph-emoji">🧪</span>
+          <div class="ph-text">
+            <h2>🧪 示例课表</h2>
+            <p>先看看效果，随时可以清空重来</p>
+          </div>
+        </div>
+        <div class="row-btns">
+          <button class="btn primary" id="btnLoadDemo" type="button">载入示例课表</button>
+          <button class="btn ghost" id="btnClearCourses" type="button">清空全部课程</button>
+        </div>
+      </div>
+
+      <div class="notice">
+        <span class="notice-star">⭐</span>
+        <p>教务系统各不相同，自动检测会读取网页中的课表表格进行识别；若系统需要登录或禁止跨域，请用浏览器打开课表页并「查看源码」复制到上方，识别效果一致。密码不会被保存。</p>
+      </div>
+    </section>
+
+    <!-- ================= 我的 / 设置视图 ================= -->
+    <section class="view" id="view-me" data-title="太阳神的小窝 🌻">
+      <div class="profile-card">
+        <div class="avatar" id="avatarBox">🐈‍⬛</div>
+        <div class="profile-main">
+          <div class="p-name" id="profileName">太阳神眷顾的同学</div>
+          <div class="p-sub" id="profileSub">—</div>
+        </div>
+        <button class="avatar-edit" id="btnEditName" type="button" aria-label="编辑昵称">✏️</button>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">🗓 学期设置</h3>
+        <div class="setting-row">
+          <div class="sr-text"><span>开学第一周周一</span><small>用于自动计算当前周次</small></div>
+          <input type="date" id="setStart" class="input compact" />
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>学期总周数</span><small>1 ~ 30 周</small></div>
+          <select id="setWeeks" class="input compact select">
+            <option value="16">16 周</option>
+            <option value="18">18 周</option>
+            <option value="20">20 周</option>
+            <option value="22">22 周</option>
+            <option value="25">25 周</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>每天节数</span><small>影响课表行数与作息</small></div>
+          <select id="setSections" class="input compact select">
+            <option value="8">8 节</option>
+            <option value="10">10 节</option>
+            <option value="12">12 节</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>显示周末</span><small>关闭后只显示周一到周五</small></div>
+          <label class="switch">
+            <input type="checkbox" id="setWeekend" />
+            <span class="switch-track"><span class="switch-dot"></span></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 时段配色：随现实时间一天四段自动换色 -->
+      <div class="section">
+        <h3 class="section-title">🌗 一天四变 · 太阳神 / 错误文档</h3>
+        <div class="setting-row">
+          <div class="sr-text"><span>自动跟随时间换色</span><small>清晨 · 中午 · 下午 · 晚上，一天变四次</small></div>
+          <label class="switch">
+            <input type="checkbox" id="setAutoTheme" />
+            <span class="switch-track"><span class="switch-dot"></span></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>背景也跟随时段</span><small>自定义背景图 / 背景色时，以你的设置为准</small></div>
+          <label class="switch">
+            <input type="checkbox" id="setBgFollow" />
+            <span class="switch-track"><span class="switch-dot"></span></span>
+          </label>
+        </div>
+        <div class="phase-grid" id="phaseGrid"></div>
+        <div class="phase-now" id="phaseNow">—</div>
+      </div>
+
+      <!-- 上课与外卖提醒 -->
+      <div class="section">
+        <h3 class="section-title">⚠️ 上课与猫猫提醒</h3>
+        <div class="setting-row">
+          <div class="sr-text"><span>上课前提醒</span><small>提前知道下一节课，不再踩点</small></div>
+          <div class="sr-controls">
+            <select id="setRemindPreMin" class="input compact select mini">
+              <option value="10">10 分</option>
+              <option value="15">15 分</option>
+              <option value="20">20 分</option>
+              <option value="25">25 分</option>
+              <option value="30">30 分</option>
+            </select>
+            <label class="switch">
+              <input type="checkbox" id="setRemindPre" />
+              <span class="switch-track"><span class="switch-dot"></span></span>
+            </label>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>快下课提醒</span><small>提前收拾好东西，从容离开</small></div>
+          <div class="sr-controls">
+            <select id="setRemindEndMin" class="input compact select mini">
+              <option value="3">3 分</option>
+              <option value="5">5 分</option>
+              <option value="8">8 分</option>
+              <option value="10">10 分</option>
+            </select>
+            <label class="switch">
+              <input type="checkbox" id="setRemindEnd" />
+              <span class="switch-track"><span class="switch-dot"></span></span>
+            </label>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>点外卖提醒</span><small>上午最后一节、下午最后一节提前提醒</small></div>
+          <div class="sr-controls">
+            <select id="setRemindMealMin" class="input compact select mini">
+              <option value="20">20 分</option>
+              <option value="25">25 分</option>
+              <option value="30">30 分</option>
+              <option value="40">40 分</option>
+            </select>
+            <label class="switch">
+              <input type="checkbox" id="setRemindMeal" />
+              <span class="switch-track"><span class="switch-dot"></span></span>
+            </label>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>提醒音效</span><small>用 Web Audio 播放两声轻铃</small></div>
+          <label class="switch">
+            <input type="checkbox" id="setRemindSound" />
+            <span class="switch-track"><span class="switch-dot"></span></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>提醒振动</span><small>部分设备可能不支持</small></div>
+          <label class="switch">
+            <input type="checkbox" id="setRemindVibrate" />
+            <span class="switch-track"><span class="switch-dot"></span></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>提醒方式</span><small>弹窗更醒目，横幅不打断当前操作</small></div>
+          <select id="setRemindPopup" class="input compact select mini">
+            <option value="1">弹窗</option>
+            <option value="0">横幅</option>
+          </select>
+        </div>
+        <div class="row-btns">
+          <button class="btn ghost" id="btnRemindTest" type="button">🔔 试听提醒</button>
+          <button class="btn ghost" id="btnRemindRules" type="button">📋 提醒规则</button>
+        </div>
+        <div class="remind-note">提醒在 App 打开时生效：WebView 限制下暂不支持后台推送，建议上课前把 App 留在前台。所有提醒按本机时间与课表节次计算，修改课程时间后会自动重算。</div>
+      </div>
+
+      <!-- 自定义弹窗提醒 -->
+      <div class="section">
+        <h3 class="section-title">❌ 自定义弹窗提醒</h3>
+        <div class="custom-reminder-list" id="customReminderList"></div>
+        <div class="row-btns">
+          <button class="btn primary" id="btnAddReminder" type="button">＋ 添加提醒</button>
+          <button class="btn ghost" id="btnReminderHelp" type="button">使用说明</button>
+        </div>
+        <div class="remind-note">可以添加「交作业」「取快递」「开会」等提醒，支持单次、每天、工作日、每周重复；到点后会弹出提醒窗，也可以提前几分钟提醒。</div>
+      </div>
+
+      <!-- 天气与穿搭 -->
+      <div class="section">
+        <h3 class="section-title">☀️ 天气变形与穿搭</h3>
+        <div class="setting-row">
+          <div class="sr-text"><span>自动读取手机天气</span><small>用定位获取当地实时天气与气温</small></div>
+          <label class="switch">
+            <input type="checkbox" id="setWeatherOn" />
+            <span class="switch-track"><span class="switch-dot"></span></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>天气来源</span><small>定位失败时可改用城市或手动填写</small></div>
+          <select id="setWeatherMode" class="input compact select mini">
+            <option value="auto">自动定位</option>
+            <option value="city">指定城市</option>
+            <option value="manual">手动天气</option>
+          </select>
+        </div>
+        <div class="setting-row" id="weatherCityRow">
+          <div class="sr-text"><span>城市</span><small>中文/拼音均可，例如：广州</small></div>
+          <div class="sr-controls">
+            <input type="text" id="setWeatherCity" class="input compact weather-city-input" maxlength="20" placeholder="广州" />
+            <button class="btn ghost mini-btn" id="btnWeatherCity" type="button">查询</button>
+          </div>
+        </div>
+        <div class="setting-row" id="weatherManualRow">
+          <div class="sr-text"><span>手动气温</span><small>无法联网时用于穿搭推荐</small></div>
+          <div class="sr-controls">
+            <input type="number" id="setWeatherManualTemp" class="input compact temp-input" min="-40" max="50" step="1" />
+            <select id="setWeatherManualCode" class="input compact select mini">
+              <option value="0">晴</option>
+              <option value="1">多云</option>
+              <option value="2">阴</option>
+              <option value="3">雾</option>
+              <option value="61">小雨</option>
+              <option value="63">中雨</option>
+              <option value="65">大雨</option>
+              <option value="71">小雪</option>
+              <option value="73">中雪</option>
+              <option value="95">雷阵雨</option>
+            </select>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>天气特效</span><small>下雨、下雪、起雾时改变界面氛围</small></div>
+          <label class="switch">
+            <input type="checkbox" id="setWeatherFx" />
+            <span class="switch-track"><span class="switch-dot"></span></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>天气主题色</span><small>按晴雨冷暖轻微调整界面色调</small></div>
+          <label class="switch">
+            <input type="checkbox" id="setWeatherTheme" />
+            <span class="switch-track"><span class="switch-dot"></span></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>穿搭推荐</span><small>按体感温度、降雨与风力推荐</small></div>
+          <label class="switch">
+            <input type="checkbox" id="setWeatherOutfit" />
+            <span class="switch-track"><span class="switch-dot"></span></span>
+          </label>
+        </div>
+        <div class="weather-status" id="weatherStatus">还没有读取天气</div>
+        <div class="row-btns">
+          <button class="btn primary" id="btnWeatherRefresh" type="button">↻ 刷新天气</button>
+          <button class="btn ghost" id="btnWeatherDetail" type="button">查看穿搭与预报</button>
+        </div>
+        <div class="remind-note">天气由手机定位 + Open-Meteo 提供，仅用于本机展示，不上传课表。定位被拒绝时，可在上方指定城市或手动填写气温。</div>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">☀️ / ⚠️ 主题色与预设</h3>
+        <div class="preset-note">
+          <span class="pn-sun">☀️ 太阳神 · 白黄</span>
+          <span class="pn-error">⚠️ 错误文档 · 黑蓝</span>
+          <em>附赠完整的一天四变 + 天气变形</em>
+        </div>
+        <div class="theme-grid" id="themeGrid"></div>
+        <div class="theme-note" id="themeNote">手动选色会关闭时段自动配色，可在上方重新开启。</div>
+        <h3 class="section-title">🖼 背景</h3>
+        <div class="bg-grid" id="bgGrid"></div>
+        <div class="setting-row">
+          <div class="sr-text"><span>自定义背景色</span><small>点右侧色块自由选择</small></div>
+          <input type="color" id="setBgColor" class="color-input" value="#eafafd" />
+        </div>
+        <div class="row-btns">
+          <button class="btn ghost" id="btnUploadBg" type="button">📷 从相册选择背景</button>
+          <button class="btn ghost" id="btnClearBg" type="button">恢复默认</button>
+        </div>
+        <div class="bg-preview-note" id="bgNote" hidden>已使用自定义图片背景 🖼</div>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">📦 课表数据</h3>
+        <div class="data-info" id="dataInfo">共 0 门课程</div>
+        <div class="row-btns">
+          <button class="btn primary" id="btnExport" type="button">📤 导出备份</button>
+          <button class="btn ghost" id="btnImportFile" type="button">📥 导入备份</button>
+        </div>
+        <input type="file" id="fileImport" accept=".json,application/json" hidden />
+        <button class="btn danger-ghost full" id="btnResetAll" type="button">⚠️ 清空全部数据</button>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">📱 桌面小组件</h3>
+        <p>安装 APK 后，长按手机桌面 → 小组件 → 找到「太阳神课程表」。</p>
+        <p class="about-small">支持小 / 中 / 大三种尺寸：小尺寸显示天气、下节课时间和地点；中尺寸显示今日 2 节课程；大尺寸显示完整今日课表。拖动小组件边缘即可调整大小。</p>
+      </div>
+
+      <div class="section">
+        <h3 class="section-title">📥 Android 安装包</h3>
+        <p>不想用网页版？下载 APK，安装后还可以把「太阳神今日课表」放到手机桌面。</p>
+        <p class="about-small">Android 5.0+ · v2.1.0 · 安装前请先卸载旧版</p>
+        <div class="row-btns">
+          <a class="btn primary grow" href="download/sunny-timetable-v2.1.0.apk" download>📥 下载 APK</a>
+        </div>
+      </div>
+
+      <div class="section about">
+        <h3 class="section-title">🌻 关于太阳神的随身陪伴课程表</h3>
+        <p>太阳神、猫猫和颜文字一起陪你上课。白黄是太阳，黑蓝是错误文档，都是今天的你。</p>
+        <p class="about-small">数据仅保存在本机 · 不收集任何个人信息 · v2.1.0 · ☀️🐈‍⬛⚠️</p>
+      </div>
+
+      <div class="page-bottom-space"></div>
+    </section>
+  </main>
+
+  <!-- 底部导航栏 -->
+  <nav class="tabbar" id="tabbar">
+    <button class="tab is-active" data-tab="schedule" type="button">
+      <span class="tab-icon">☀️</span>
+      <span class="tab-label">太阳课表</span>
+    </button>
+    <button class="tab" data-tab="today" type="button">
+      <span class="tab-icon">🐈</span>
+      <span class="tab-label">猫猫今日</span>
+    </button>
+    <button class="tab" data-tab="food" type="button">
+      <span class="tab-icon">🍜</span>
+      <span class="tab-label">吃啥</span>
+    </button>
+    <button class="tab" data-tab="import" type="button">
+      <span class="tab-icon">📄</span>
+      <span class="tab-label">收课表</span>
+    </button>
+    <button class="tab" data-tab="me" type="button">
+      <span class="tab-icon">🌻</span>
+      <span class="tab-label">小窝</span>
+    </button>
+  </nav>
+
+  <!-- ================= 课程编辑全屏页 ================= -->
+  <div class="editor-page" id="editorPage" aria-hidden="true">
+    <header class="app-header">
+      <div class="header-inner">
+        <button class="header-btn" id="editorBack" type="button" aria-label="返回">‹</button>
+        <h1 class="header-title" id="editorTitle">添加课程</h1>
+      </div>
+    </header>
+
+    <div class="editor-scroll" id="editorScroll">
+      <form id="courseForm" class="editor-form" autocomplete="off" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="fName">课程名称 <i class="req">*</i></label>
+          <input type="text" id="fName" class="input" placeholder="例：高等数学" maxlength="30" />
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="fTeacher">任课教师 👩‍🏫</label>
+            <input type="text" id="fTeacher" class="input" placeholder="张明" maxlength="20" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="fRoom">上课教室 📍</label>
+            <input type="text" id="fRoom" class="input" placeholder="A302" maxlength="24" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fBooks">需要带的书 📚</label>
+          <input type="text" id="fBooks" class="input" placeholder="高等数学（第七版）、习题册" maxlength="60" />
+          <div class="form-hint">多本书可用「、」或逗号分隔</div>
+        </div>
+
+        <div class="form-group">
+          <span class="form-label">上课星期</span>
+          <div class="chip-row" id="fDay"></div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="fStart">开始节次</label>
+            <select id="fStart" class="input select"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="fEnd">结束节次</label>
+            <select id="fEnd" class="input select"></select>
+          </div>
+        </div>
+        <div class="form-hint" id="sectionTimeHint">—</div>
+
+        <div class="form-group">
+          <span class="form-label">上课周次</span>
+          <div class="chip-row quick" id="weekQuick">
+            <button type="button" class="mini-chip" data-quick="all">全选</button>
+            <button type="button" class="mini-chip" data-quick="none">清空</button>
+            <button type="button" class="mini-chip" data-quick="odd">单周</button>
+            <button type="button" class="mini-chip" data-quick="even">双周</button>
+          </div>
+          <div class="week-chips" id="fWeeks"></div>
+        </div>
+
+        <div class="form-group">
+          <span class="form-label">课程颜色 🎨</span>
+          <div class="color-row" id="fColors"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fNote">备注</label>
+          <textarea id="fNote" class="textarea" rows="3" placeholder="考试安排、作业提醒…" maxlength="200"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fEmoji">课程小图标 emoji</label>
+          <input type="text" id="fEmoji" class="input" placeholder="⭐" maxlength="4" />
+          <div class="emoji-quick" id="emojiQuick"></div>
+        </div>
+      </form>
+      <div class="editor-bottom-space"></div>
+    </div>
+
+    <div class="editor-footer">
+      <button class="btn danger-ghost" id="btnDeleteCourse" type="button">🗑 删除</button>
+      <button class="btn primary grow" id="btnSaveCourse" type="button">保存课程 ⭐</button>
+    </div>
+  </div>
+
+  <!-- 模态层 -->
+  <div class="modal-mask" id="modalMask" hidden>
+    <div class="modal-card" id="modalCard" role="dialog" aria-modal="true"></div>
+  </div>
+
+  <!-- 提醒弹窗（与普通模态分开，关闭后不阻塞页面操作） -->
+  <div class="reminder-popup" id="reminderPopup" hidden>
+    <div class="rpp-backdrop" data-popup="close"></div>
+    <div class="rpp-sheet" role="dialog" aria-modal="true" aria-labelledby="reminderPopupTitle">
+      <div class="rpp-handle"></div>
+      <div class="rpp-head">
+        <div class="rpp-emoji" id="reminderPopupEmoji">🔔</div>
+        <div class="rpp-headtext">
+          <div class="rpp-kicker" id="reminderPopupKicker">课程提醒</div>
+          <div class="rpp-title" id="reminderPopupTitle">还有 20 分钟上课</div>
+        </div>
+        <button class="rpp-close" type="button" data-popup="close" aria-label="关闭提醒">✕</button>
+      </div>
+      <div class="rpp-body" id="reminderPopupBody">—</div>
+      <div class="rpp-actions">
+        <button class="rpp-btn ghost" type="button" data-popup="snooze">稍后 5 分钟</button>
+        <button class="rpp-btn primary" type="button" data-popup="course">看看课程</button>
+      </div>
+      <button class="rpp-done" type="button" data-popup="close">好，知道啦</button>
+    </div>
+  </div>
+
+  <!-- 轻提示 -->
+  <div class="toast" id="toast" hidden></div>
+
+  <!-- 旧 WebView 兜底提示：脚本语法/加载失败时不再只显示白屏 -->
+  <div class="boot-fallback" id="bootFallback" hidden>
+    <div class="boot-card">
+      <div class="boot-sun">☀️ ⚠️</div>
+      <div class="boot-title">页面没有成功加载</div>
+      <div class="boot-text">如果这是 Android APK，请到应用商店更新「Android System WebView」或 Chrome，然后重新打开。<br>(=^･ω･^=) 也可以先用电脑浏览器打开课表。</div>
+      <button class="btn primary" type="button" onclick="location.reload()">重新加载</button>
+    </div>
+  </div>
+
+  <script>
+    /* 老 WebView 的最小兼容垫片：不改变现代浏览器行为 */
+    (function () {
+      if (!String.prototype.padStart) {
+        String.prototype.padStart = function (len, pad) {
+          var s = String(this);
+          pad = pad === undefined ? ' ' : String(pad);
+          while (s.length < len) s = pad + s;
+          return s;
+        };
+      }
+      if (!Object.assign) {
+        Object.assign = function (target) {
+          for (var i = 1; i < arguments.length; i++) {
+            var src = arguments[i];
+            if (!src) continue;
+            for (var k in src) if (Object.prototype.hasOwnProperty.call(src, k)) target[k] = src[k];
+          }
+          return target;
+        };
+      }
+      if (!Array.from) {
+        Array.from = function (like) {
+          var out = [];
+          if (like && typeof like.forEach === 'function') {
+            like.forEach(function (item) { out.push(item); });
+            return out;
+          }
+          if (like && typeof Symbol !== 'undefined' && like[Symbol.iterator]) {
+            var it = like[Symbol.iterator]();
+            var step = it.next();
+            while (!step.done) {
+              out.push(step.value);
+              step = it.next();
+            }
+            return out;
+          }
+          for (var i = 0; i < like.length; i++) out.push(like[i]);
+          return out;
+        };
+      }
+      if (!Array.prototype.find) {
+        Array.prototype.find = function (fn, thisArg) {
+          for (var i = 0; i < this.length; i++) {
+            if (fn.call(thisArg, this[i], i, this)) return this[i];
+          }
+          return undefined;
+        };
+      }
+      if (!Array.prototype.findIndex) {
+        Array.prototype.findIndex = function (fn, thisArg) {
+          for (var i = 0; i < this.length; i++) {
+            if (fn.call(thisArg, this[i], i, this)) return i;
+          }
+          return -1;
+        };
+      }
+      if (!Element.prototype.closest) {
+        Element.prototype.closest = function (sel) {
+          var el = this;
+          while (el && el.nodeType === 1) {
+            var matches = el.matches || el.webkitMatchesSelector || el.msMatchesSelector;
+            if (matches && matches.call(el, sel)) return el;
+            el = el.parentElement;
+          }
+          return null;
+        };
+      }
+      function showBoot() {
+        var el = document.getElementById('bootFallback');
+        if (el) el.hidden = false;
+      }
+      function hideBoot() {
+        var el = document.getElementById('bootFallback');
+        if (el) el.hidden = true;
+      }
+      window.__hideBootFallback = hideBoot;
+      /* legacy bundle: async/await 已转成 Promise，不做 async 语法检查 */
+      setTimeout(function () {
+        /* 只有 AppStore 完全不存在才提示；初始化慢不应误判 */
+        if (!window.AppStore) showBoot();
+        else hideBoot();
+      }, 12000);
+    })();
+  </script>
+
+  <script src="legacy/store.js"></script>
+  <script src="legacy/pdf-lite.js"></script>
+  <script src="legacy/importer.js"></script>
+  <script src="legacy/app.js"></script>
+  <script src="legacy/views.js"></script>
+  <script src="legacy/delight.js"></script>
+  <script src="legacy/widget.js"></script>
+  <script src="legacy/editor.js"></script>
+  <script src="legacy/import-ui.js"></script>
+  <script src="legacy/settings.js"></script>
+  <script src="legacy/reminders.js"></script>
+  <script src="legacy/weather.js"></script>
+  <script src="legacy/rhythm.js"></script>
+  <script src="legacy/food.js"></script>
+</body>
+</html>
+
+
