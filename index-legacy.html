@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -140,10 +140,77 @@
       </div>
 
       <div class="today-list" id="todayList"></div>
+
+      <!-- 今日待办：可手动添加，也会在下课时弹窗添加 -->
+      <div class="section planner-section" id="todoSection">
+        <div class="section-head">
+          <h3 class="section-title">✅ 今日待办</h3>
+          <span class="section-badge" id="todoStats">0 / 0</span>
+        </div>
+        <div class="todo-add-row">
+          <input class="input" id="todoInput" type="text" maxlength="80" placeholder="记作业、交材料、取快递…" />
+          <button class="btn primary" id="btnAddTodo" type="button">＋</button>
+        </div>
+        <div class="todo-list" id="todoList"></div>
+      </div>
+
+      <!-- 假期 / 考试倒计时 -->
+      <div class="section planner-section" id="countdownSection">
+        <div class="section-head">
+          <h3 class="section-title">⏳ 假期与考试倒计时</h3>
+          <span class="section-badge" id="countdownStats">—</span>
+        </div>
+        <div class="countdown-strip" id="countdownStrip"></div>
+        <div class="countdown-all" id="countdownAll"></div>
+      </div>
+
+      <!-- 早/晚自习 -->
+      <div class="section planner-section" id="selfStudySection">
+        <div class="section-head">
+          <h3 class="section-title">🌅 早 / 晚自习</h3>
+          <span class="section-badge" id="selfStudyStats">可自定义</span>
+        </div>
+        <div class="self-study-list" id="selfStudyList"></div>
+      </div>
     </section>
 
-    <!-- ================= 今天吃啥（转盘）视图 ================= -->
-    <section class="view" id="view-food" data-title="太阳神吃啥 🍜">
+    <!-- ================= 小程序合集 ================= -->
+    <section class="view" id="view-apps" data-title="太阳神小程序 🧰">
+      <div class="apps-hero">
+        <div class="ah-kicker">☀️ SUNNY MINI APPS</div>
+        <div class="ah-title">太阳神小程序合集 🧰</div>
+        <div class="ah-sub">点开一个小程序，猫猫把常用的小工具都收在这里 ฅ^•ﻌ•^ฅ</div>
+      </div>
+
+      <div class="apps-grid" id="appsGrid">
+        <button class="app-card app-food" type="button" data-app="food">
+          <span class="ac-icon">🍜</span>
+          <span class="ac-name">今天吃什么</span>
+          <span class="ac-sub">转盘决定午饭晚饭</span>
+        </button>
+        <button class="app-card app-notes" type="button" data-app="notes">
+          <span class="ac-icon">📝</span>
+          <span class="ac-name">快捷课程笔记</span>
+          <span class="ac-sub">照片 · 颜色 · 分割线</span>
+        </button>
+        <button class="app-card app-focus" type="button" data-app="focus">
+          <span class="ac-icon">⏱️</span>
+          <span class="ac-name">专注番茄钟</span>
+          <span class="ac-sub">25 分钟自习计时</span>
+        </button>
+        <button class="app-card app-random" type="button" data-app="random">
+          <span class="ac-icon">🎲</span>
+          <span class="ac-name">随机决定</span>
+          <span class="ac-sub">选择困难症急救</span>
+        </button>
+      </div>
+
+      <div class="mini-panel" id="miniFood" hidden>
+        <div class="mini-app-head">
+          <button class="mini-back" type="button" data-app-back="1">‹ 小程序</button>
+          <span>🍜 今天吃什么</span>
+        </div>
+
       <div class="food-hero">
         <div class="fh-title">太阳神吃啥？转一转 🍥</div>
         <div class="fh-sub">猫猫说：选不出来就交给命运，转到什么吃什么～ ฅ^•ﻌ•^ฅ</div>
@@ -185,6 +252,77 @@
 
       <div class="food-tip">💡 小提示：菜单可以自己改，最多 24 个选项；默认提前 30 分钟的外卖提醒也会把你带到这一页。</div>
       <div class="page-bottom-space"></div>
+      </div><!-- /miniFood -->
+
+      <div class="mini-panel" id="miniNotes" hidden>
+        <div class="mini-app-head">
+          <button class="mini-back" type="button" data-app-back="1">‹ 小程序</button>
+          <span>📝 快捷课程笔记</span>
+        </div>
+        <div class="notes-toolbar">
+          <select class="input compact select mini" id="noteCourse"><option value="">不关联课程</option></select>
+          <input class="input compact" id="noteTitle" type="text" maxlength="30" placeholder="笔记标题" />
+          <button class="btn primary mini-btn" id="btnNewNote" type="button">＋ 新笔记</button>
+        </div>
+        <div class="notes-layout">
+          <div class="notes-list" id="noteList"></div>
+          <div class="note-workspace">
+            <div class="note-toolbar">
+              <button type="button" class="nt-btn" data-cmd="bold" title="加粗"><b>B</b></button>
+              <button type="button" class="nt-btn" data-cmd="italic" title="斜体"><i>I</i></button>
+              <button type="button" class="nt-btn" data-cmd="underline" title="下划线"><u>U</u></button>
+              <button type="button" class="nt-btn" id="btnNoteHr" title="分割线">—</button>
+              <span class="nt-colors" id="noteColors"></span>
+              <input type="color" id="noteColor" class="note-color" value="#f0a30a" title="字体颜色" />
+              <button type="button" class="nt-btn" id="btnNotePhoto" title="插入照片">📷</button>
+              <input type="file" id="notePhotoInput" accept="image/*" multiple hidden />
+              <button type="button" class="nt-btn nt-save" id="btnSaveNote" title="保存">保存</button>
+            </div>
+            <div class="note-editor" id="noteEditor" contenteditable="true" data-placeholder="在这里写课程笔记…可以插入照片、改颜色、加分割线"></div>
+            <div class="note-status" id="noteStatus">自动保存在本机</div>
+          </div>
+        </div>
+      </div><!-- /miniNotes -->
+
+      <div class="mini-panel" id="miniFocus" hidden>
+        <div class="mini-app-head">
+          <button class="mini-back" type="button" data-app-back="1">‹ 小程序</button>
+          <span>⏱️ 专注番茄钟</span>
+        </div>
+        <div class="focus-card">
+          <div class="focus-ring" id="focusRing">
+            <div class="focus-time" id="focusTime">25:00</div>
+            <div class="focus-label" id="focusLabel">准备开始</div>
+          </div>
+          <div class="focus-actions">
+            <button class="btn primary" id="btnFocusStart" type="button">开始专注</button>
+            <button class="btn ghost" id="btnFocusReset" type="button">重置</button>
+          </div>
+          <div class="focus-modes">
+            <button type="button" class="focus-mode is-on" data-focus-min="25">25 分钟</button>
+            <button type="button" class="focus-mode" data-focus-min="45">45 分钟</button>
+            <button type="button" class="focus-mode" data-focus-min="5">5 分钟</button>
+          </div>
+          <div class="focus-tip">完成一次专注，猫猫会替你记一笔 🐈‍⬛</div>
+        </div>
+      </div><!-- /miniFocus -->
+
+      <div class="mini-panel" id="miniRandom" hidden>
+        <div class="mini-app-head">
+          <button class="mini-back" type="button" data-app-back="1">‹ 小程序</button>
+          <span>🎲 随机决定</span>
+        </div>
+        <div class="random-card">
+          <textarea class="textarea" id="randomInput" rows="5" placeholder="每行一个选项，例如：&#10;去图书馆&#10;去自习室&#10;回宿舍躺平"></textarea>
+          <div class="row-btns">
+            <button class="btn primary grow" id="btnRandomPick" type="button">🎯 帮我选一个</button>
+            <button class="btn ghost" id="btnRandomClear" type="button">清空</button>
+          </div>
+          <div class="random-result" id="randomResult">命运还没有开口…</div>
+        </div>
+      </div><!-- /miniRandom -->
+
+      <div class="page-bottom-space"></div>
     </section>
 
     <!-- ================= 导入视图 ================= -->
@@ -202,9 +340,11 @@
           <input type="url" id="importUrl" class="input" placeholder="https://jw.example.edu.cn/timetable" autocomplete="off" />
         </label>
         <div class="row-btns">
-          <button class="btn primary" id="btnFetch" type="button">📡 开始检测</button>
-          <button class="btn ghost" id="btnFetchHelp" type="button">使用说明</button>
+          <button class="btn primary" id="btnOpenBrowser" type="button">🌐 在 App 内打开教务系统</button>
+          <button class="btn ghost" id="btnFetch" type="button">📡 直接检测</button>
+          <button class="btn ghost" id="btnFetchHelp" type="button">说明</button>
         </div>
+        <div class="remind-note">APK 内点「在 App 内打开教务系统」：登录后进入课表页，点右下角「检测课表」即可自动导入；网页版受浏览器跨域限制，请用下面的源码粘贴或 PDF 导入。</div>
         <div class="import-log" id="importLog" hidden></div>
       </div>
 
@@ -314,6 +454,67 @@
         </div>
       </div>
 
+      <!-- 可编辑作息时间 -->
+      <div class="section planner-section" id="periodSettingsSection">
+        <h3 class="section-title">⏰ 上下课时间与下课时长</h3>
+        <div class="setting-row">
+          <div class="sr-text"><span>统一每节时长</span><small>只改下课时间，保留各节上课时间</small></div>
+          <div class="sr-controls">
+            <input class="input compact" id="setClassDuration" type="number" min="20" max="180" step="5" />
+            <span class="unit-text">分钟</span>
+            <button class="btn ghost mini-btn" id="btnApplyDuration" type="button">应用</button>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>课间休息</span><small>用于「自动重排」下一节上课时间</small></div>
+          <div class="sr-controls">
+            <input class="input compact" id="setBreakDuration" type="number" min="0" max="60" step="5" />
+            <span class="unit-text">分钟</span>
+            <button class="btn ghost mini-btn" id="btnReapplyPeriods" type="button">自动重排</button>
+          </div>
+        </div>
+        <div class="period-editor" id="periodEditor"></div>
+        <div class="remind-note">每节课都可以单独改上课/下课时间；修改后课表、今日、提醒和小组件都会重新计算。</div>
+      </div>
+
+      <!-- 早/晚自习 -->
+      <div class="section planner-section" id="selfStudySettingsSection">
+        <h3 class="section-title">🌅 早 / 晚自习</h3>
+        <div id="selfStudyEditor"></div>
+        <div class="remind-note">打开开关后，会在「太阳神的一天」显示自习地点与时间。</div>
+      </div>
+
+      <!-- 假期 / 考试倒计时 -->
+      <div class="section planner-section" id="countdownSettingsSection">
+        <h3 class="section-title">⏳ 假期 / 考试倒计时</h3>
+        <div class="countdown-add">
+          <input class="input" id="cdTitle" type="text" maxlength="20" placeholder="期末考试 / 寒假 / 国庆" />
+          <input class="input compact" id="cdDate" type="date" />
+          <select class="input compact select mini" id="cdType">
+            <option value="exam">📝 考试</option>
+            <option value="holiday">🎉 法定节假日</option>
+            <option value="vacation">🌴 寒暑假</option>
+            <option value="other">⏳ 其他</option>
+          </select>
+          <label class="check-inline"><input type="checkbox" id="cdRepeat" /> 每年</label>
+          <button class="btn primary mini-btn" id="btnAddCountdown" type="button">添加</button>
+        </div>
+        <div class="countdown-presets" id="countdownPresets"></div>
+        <div class="countdown-settings-list" id="countdownSettingsList"></div>
+      </div>
+
+      <!-- 框框透明度 -->
+      <div class="section planner-section" id="appearanceSettingsSection">
+        <h3 class="section-title">🫧 框框透明度</h3>
+        <div class="setting-row">
+          <div class="sr-text"><span>卡片透明度</span><small>越低越通透，文字仍然可读</small></div>
+          <div class="sr-controls">
+            <input class="range" id="setUiAlpha" type="range" min="45" max="100" step="1" />
+            <span class="unit-text" id="uiAlphaText">93%</span>
+          </div>
+        </div>
+      </div>
+
       <!-- 时段配色：随现实时间一天四段自动换色 -->
       <div class="section">
         <h3 class="section-title">🌗 一天四变 · 太阳神 / 错误文档</h3>
@@ -395,6 +596,13 @@
           <div class="sr-text"><span>提醒振动</span><small>部分设备可能不支持</small></div>
           <label class="switch">
             <input type="checkbox" id="setRemindVibrate" />
+            <span class="switch-track"><span class="switch-dot"></span></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>下课后记作业</span><small>下课 10 分钟内弹窗，可关闭</small></div>
+          <label class="switch">
+            <input type="checkbox" id="setAutoHomework" />
             <span class="switch-track"><span class="switch-dot"></span></span>
           </label>
         </div>
@@ -534,19 +742,10 @@
         <p class="about-small">支持小 / 中 / 大三种尺寸：小尺寸显示天气、下节课时间和地点；中尺寸显示今日 2 节课程；大尺寸显示完整今日课表。拖动小组件边缘即可调整大小。</p>
       </div>
 
-      <div class="section">
-        <h3 class="section-title">📥 Android 安装包</h3>
-        <p>不想用网页版？下载 APK，安装后还可以把「太阳神今日课表」放到手机桌面。</p>
-        <p class="about-small">Android 5.0+ · v2.1.0 · 安装前请先卸载旧版</p>
-        <div class="row-btns">
-          <a class="btn primary grow" href="download/sunny-timetable-v2.1.0.apk" download>📥 下载 APK</a>
-        </div>
-      </div>
-
       <div class="section about">
         <h3 class="section-title">🌻 关于太阳神的随身陪伴课程表</h3>
         <p>太阳神、猫猫和颜文字一起陪你上课。白黄是太阳，黑蓝是错误文档，都是今天的你。</p>
-        <p class="about-small">数据仅保存在本机 · 不收集任何个人信息 · v2.1.0 · ☀️🐈‍⬛⚠️</p>
+        <p class="about-small">数据仅保存在本机 · 不收集任何个人信息 · v2.2.0 · ☀️🐈‍⬛⚠️</p>
       </div>
 
       <div class="page-bottom-space"></div>
@@ -563,9 +762,9 @@
       <span class="tab-icon">🐈</span>
       <span class="tab-label">猫猫今日</span>
     </button>
-    <button class="tab" data-tab="food" type="button">
-      <span class="tab-icon">🍜</span>
-      <span class="tab-label">吃啥</span>
+    <button class="tab" data-tab="apps" type="button">
+      <span class="tab-icon">🧰</span>
+      <span class="tab-label">小程序</span>
     </button>
     <button class="tab" data-tab="import" type="button">
       <span class="tab-icon">📄</span>
@@ -690,6 +889,23 @@
     </div>
   </div>
 
+  <!-- 下课后记作业弹窗 -->
+  <div class="todo-popup" id="todoPopup" hidden>
+    <div class="todo-popup-backdrop" data-todo-close="1"></div>
+    <div class="todo-popup-card" role="dialog" aria-modal="true" aria-labelledby="todoPopupTitle">
+      <button class="todo-popup-close" type="button" data-todo-close="1" aria-label="关闭">✕</button>
+      <div class="todo-popup-emoji">📚</div>
+      <div class="todo-popup-title" id="todoPopupTitle">这节课下课啦</div>
+      <div class="todo-popup-sub" id="todoPopupCourse">记一下作业，别让猫猫忘记</div>
+      <textarea class="textarea" id="todoPopupText" rows="3" maxlength="200" placeholder="例如：高数习题 3.1、周五交实验报告…"></textarea>
+      <div class="row-btns">
+        <button class="btn primary grow" id="btnTodoPopupSave" type="button">存为待办 ✅</button>
+        <button class="btn ghost" type="button" data-todo-close="1">先不记</button>
+      </div>
+      <div class="todo-popup-hint">关闭后仍可在「今天」页手动添加</div>
+    </div>
+  </div>
+
   <!-- 轻提示 -->
   <div class="toast" id="toast" hidden></div>
 
@@ -802,8 +1018,12 @@
   <script src="legacy/reminders.js"></script>
   <script src="legacy/weather.js"></script>
   <script src="legacy/rhythm.js"></script>
+  <script src="legacy/planner.js"></script>
+  <script src="legacy/miniapps.js"></script>
+  <script src="legacy/import-browser.js"></script>
   <script src="legacy/food.js"></script>
 </body>
 </html>
+
 
 

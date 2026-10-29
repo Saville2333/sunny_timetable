@@ -332,10 +332,12 @@
    * 视图切换
    * ============================================================ */
   App.switchTab = function (tab) {
+    var requested = tab;
+    if (tab === 'food') tab = 'apps';
     var titles = {
       schedule: '☀️ 太阳神课程表',
       today: '🐈 太阳神的一天',
-      food: '🍜 太阳神吃啥',
+      apps: '🧰 太阳神小程序',
       import: '📄 太阳神收课表',
       me: '🌻 太阳神的小窝'
     };
@@ -351,7 +353,8 @@
     if (title) title.textContent = titles[tab];
     if (tab === 'schedule') this.renderSchedule();
     if (tab === 'today') this.renderToday();
-    if (tab === 'food' && typeof this.enterFoodTab === 'function') this.enterFoodTab();
+    if (tab === 'apps' && typeof this.enterAppsTab === 'function') this.enterAppsTab();
+    if (tab === 'apps' && requested === 'food' && typeof this.openMiniApp === 'function') this.openMiniApp('food');
     if (tab === 'me' && typeof this.renderSettings === 'function') this.renderSettings();
     if (tab === 'import' && typeof this.renderImport === 'function') this.renderImport();
   };

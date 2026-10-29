@@ -346,7 +346,9 @@
               'remindMeal', 'remindMealMin', 'remindSound', 'remindVibrate', 'remindPopup',
               'weatherOn', 'weatherMode', 'weatherCity', 'weatherLat', 'weatherLon', 'weatherPlace',
               'weatherManualCode', 'weatherManualTemp', 'weatherFx', 'weatherTheme', 'weatherOutfit',
-              'weatherUpdatedAt'
+              'weatherUpdatedAt',
+              'periodTimes', 'classDuration', 'breakDuration', 'selfStudy', 'countdowns', 'todos',
+              'autoHomework', 'uiAlpha'
             ];
             patch = {};
             allowed.forEach(function (key) {

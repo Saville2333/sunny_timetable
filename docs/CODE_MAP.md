@@ -1,4 +1,4 @@
-# 太阳神的随身陪伴课程表 · 代码地图 v2.0
+﻿# 太阳神的随身陪伴课程表 · 代码地图 v2.0
 
 本文按「数据 → 解析 → 界面 → 提醒/天气 → 桌面/APK」的顺序说明各模块职责、关键函数和修改入口。应用没有构建步骤，脚本按 `index.html` 底部的顺序加载，模块之间通过 `window.App*` 单例通信。
 
@@ -324,6 +324,23 @@ refreshWeather(showToast)
   - `setGeolocationEnabled`
   - `onShowFileChooser` → 系统 SAF 文件选择器（PDF 导入）
   - `onGeolocationPermissionsShowPrompt` → 运行时定位权限
-- 输出：`dist/太阳神的随身陪伴课程表-v2.0.0.apk`
+- 输出：`dist/太阳神的随身陪伴课程表-v2.1.0.apk`
 
 若要上架或长期分发，请在 `build-apk.ps1` 中替换 `sunny.keystore` 为自己的发布证书，并修改 `applicationId` / 版本号。
+
+## 13. 桌面小组件与 legacy 页面（v2.1.0）
+
+- `js/widget.js`：把今日课程、当前/下一节课、天气整理成 JSON，通过 `window.SunnyWidget.updateWidget(json)` 交给 Android。
+- `android/src/com/sunny/timetable/MainActivity.java`：注册 `SunnyWidget` JS 桥；加载 `file:///android_asset/index-legacy.html`。
+- `android/src/com/sunny/timetable/SunnyWidgetProvider.java`：读取 SharedPreferences，按小组件宽高选择 `widget_small/widget_medium/widget_large`，计算当前/下一节课。
+- `android/res/xml/sunny_widget_info.xml`：2x2 初始、可横向/纵向调整到 4x2 / 4x4。
+- `android/res/layout/widget_*.xml`：三种尺寸布局；`widget_row.xml` 是课程行。
+- `xinghai-timetable/legacy/`：Babel 从 `js/` 转译的 ES5 脚本；`index-legacy.html` 是 APK/旧浏览器入口，不再用 async 语法检查。
+- 重新生成 legacy：
+
+```powershell
+node .babel-node\node_modules\@babel\cli\bin\babel.js xinghai-timetable\js --out-dir xinghai-timetable\legacy --config-file .babel-node\babel.config.json
+```
+
+- APK：`versionCode 20100 / versionName 2.1.0 / minSdk 21`，签名使用 `android/build/sunny.keystore`。
+

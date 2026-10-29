@@ -591,8 +591,125 @@ function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == 
       weatherFx: true,
       weatherTheme: true,
       weatherOutfit: true,
-      weatherUpdatedAt: 0
+      weatherUpdatedAt: 0,
+      /* 可编辑作息：数组每项 { start, end }；classDuration 用于统一重算 */
+      periodTimes: PERIOD_TIMES.map(function (p) {
+        return {
+          start: p.start,
+          end: p.end
+        };
+      }),
+      classDuration: 45,
+      breakDuration: 10,
+      /* 早/晚自习 */
+      selfStudy: {
+        morning: {
+          enabled: false,
+          start: '07:30',
+          end: '08:00',
+          place: '教室'
+        },
+        evening: {
+          enabled: false,
+          start: '19:00',
+          end: '21:00',
+          place: '图书馆'
+        }
+      },
+      /* 倒计时：假期 / 考试 / 自定义 */
+      countdowns: [],
+      /* 待办事项 */
+      todos: [],
+      /* 下课后自动弹出记作业 */
+      autoHomework: true,
+      /* 卡片透明度 0.45 ~ 1 */
+      uiAlpha: 0.93
     };
+  }
+  function normalizePeriodTimes(raw, sections) {
+    var fallback = PERIOD_TIMES;
+    var list = [];
+    var source = Array.isArray(raw) ? raw : [];
+    var total = 12;
+    for (var i = 0; i < total; i += 1) {
+      var item = source[i] || {};
+      var def = fallback[i] || fallback[fallback.length - 1];
+      var start = /^\d{1,2}:\d{2}$/.test(String(item.start || '')) ? String(item.start) : def.start;
+      var end = /^\d{1,2}:\d{2}$/.test(String(item.end || '')) ? String(item.end) : def.end;
+      var s = timeToMinutes(start);
+      var e = timeToMinutes(end);
+      if (s < 0) s = timeToMinutes(def.start);
+      if (e <= s) e = Math.min(23 * 60 + 59, s + 45);
+      start = pad2(Math.floor(s / 60)) + ':' + pad2(s % 60);
+      end = pad2(Math.floor(e / 60)) + ':' + pad2(e % 60);
+      list.push({
+        start: start,
+        end: end
+      });
+    }
+    return list;
+  }
+  function normalizeCountdown(raw) {
+    if (!raw || _typeof(raw) !== 'object') return null;
+    var title = str(raw.title, 24);
+    var date = parseDate(raw.date);
+    if (!title || !date) return null;
+    var types = ['holiday', 'vacation', 'exam', 'other'];
+    var type = String(raw.type || 'holiday');
+    if (types.indexOf(type) < 0) type = 'other';
+    var emojiMap = {
+      holiday: '🎉',
+      vacation: '🌴',
+      exam: '📝',
+      other: '⏳'
+    };
+    return {
+      id: typeof raw.id === 'string' && raw.id ? raw.id : 'cd_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+      title: title,
+      date: dateKey(date),
+      type: type,
+      emoji: str(raw.emoji, 4) || emojiMap[type],
+      repeat: !!raw.repeat
+    };
+  }
+  function normalizeTodo(raw) {
+    if (!raw || _typeof(raw) !== 'object') return null;
+    var text = str(raw.text, 200);
+    if (!text) return null;
+    return {
+      id: typeof raw.id === 'string' && raw.id ? raw.id : 'td_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+      text: text,
+      course: str(raw.course, 40),
+      due: /^\d{4}-\d{2}-\d{2}$/.test(String(raw.due || '')) ? String(raw.due) : '',
+      done: !!raw.done,
+      createdAt: Number(raw.createdAt) || Date.now()
+    };
+  }
+  function normalizeSelfStudy(raw) {
+    var base = {
+      morning: {
+        enabled: false,
+        start: '07:30',
+        end: '08:00',
+        place: '教室'
+      },
+      evening: {
+        enabled: false,
+        start: '19:00',
+        end: '21:00',
+        place: '图书馆'
+      }
+    };
+    if (!raw || _typeof(raw) !== 'object') return base;
+    ['morning', 'evening'].forEach(function (key) {
+      var item = raw[key];
+      if (!item || _typeof(item) !== 'object') return;
+      base[key].enabled = !!item.enabled;
+      if (/^\d{1,2}:\d{2}$/.test(String(item.start || ''))) base[key].start = String(item.start);
+      if (/^\d{1,2}:\d{2}$/.test(String(item.end || ''))) base[key].end = String(item.end);
+      base[key].place = str(item.place, 16) || base[key].place;
+    });
+    return base;
   }
 
   /* 自定义提醒事项（弹窗提醒，可每天 / 每周 / 单次重复） */
@@ -895,6 +1012,13 @@ function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == 
               }
               base.totalWeeks = clampInt(base.totalWeeks, 1, 30, 18);
               base.sections = clampInt(base.sections, 6, 12, 10);
+              base.periodTimes = normalizePeriodTimes(base.periodTimes, base.sections);
+              base.classDuration = clampInt(base.classDuration, 20, 180, 45);
+              base.breakDuration = clampInt(base.breakDuration, 0, 60, 10);
+              base.selfStudy = normalizeSelfStudy(base.selfStudy);
+              base.countdowns = Array.isArray(base.countdowns) ? base.countdowns.map(normalizeCountdown).filter(Boolean) : [];
+              base.todos = Array.isArray(base.todos) ? base.todos.map(normalizeTodo).filter(Boolean) : [];
+              base.uiAlpha = Math.max(0.45, Math.min(1, Number(base.uiAlpha) || 0.93));
               if (!parseDate(base.semesterStart)) base.semesterStart = dateKey(mondayOf(new Date()));
 
               /* 从旧版升级到「太阳神」品牌：没有 designVersion 的存档只迁移一次外观，
@@ -1381,8 +1505,9 @@ function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == 
       return ranges.join(', ') + ' 周';
     },
     periodTime: function periodTime(section) {
-      var idx = clampInt(section, 1, PERIOD_TIMES.length, 1) - 1;
-      return PERIOD_TIMES[idx];
+      var times = this.settings && Array.isArray(this.settings.periodTimes) && this.settings.periodTimes.length ? this.settings.periodTimes : PERIOD_TIMES;
+      var idx = clampInt(section, 1, times.length, 1) - 1;
+      return times[idx] || PERIOD_TIMES[0];
     },
     exportData: function exportData() {
       return {

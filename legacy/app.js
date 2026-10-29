@@ -322,7 +322,7 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
       var map = {
         schedule: '☀️ 太阳神课程表',
         today: '🐈 太阳神的一天',
-        food: '🍜 太阳神吃啥',
+        apps: '🧰 太阳神小程序',
         import: '📄 太阳神收课表',
         me: '🌻 太阳神的小窝'
       };
