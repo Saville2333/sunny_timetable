@@ -130,7 +130,11 @@
       if (item.id !== id) return item;
       return Object.assign({}, item, { done: !!done });
     });
-    saveTodos(todos).then(renderTodoList);
+    saveTodos(todos).then(function () {
+      renderTodoList();
+      if (done && App.progressEvent) App.progressEvent('todo');
+      if (done && App.fireConfetti) App.fireConfetti(22);
+    });
   }
 
   function deleteTodo(id) {
@@ -179,9 +183,13 @@
   }
 
   function isStudyThisWeek(item) {
-    if (!item || !item.weeks || !item.weeks.length) return true;
-    const week = Store.currentWeek();
-    return item.weeks.indexOf(week) >= 0;
+    if (!item) return false;
+    if (item.weeks && item.weeks.length && item.weeks.indexOf(Store.currentWeek()) < 0) return false;
+    if (item.days && item.days.length) {
+      const day = new Date().getDay() || 7;
+      if (item.days.indexOf(day) < 0) return false;
+    }
+    return true;
   }
 
   function appendTodayExtra(html) {
@@ -196,6 +204,27 @@
     H.$$('.extra-item' + (selector ? '.' + selector : '')).forEach(function (el) {
       if (el.parentNode) el.parentNode.removeChild(el);
     });
+  }
+
+  function sortTodayItems() {
+    const list = $('#todayList');
+    if (!list) return;
+    const items = H.$$('.today-item', list);
+    if (items.length < 2) return;
+    const keyed = items.map(function (el, index) {
+      const start = el.querySelector('.ti-start');
+      const text = start ? start.textContent.trim() : '';
+      const m = /^(\d{1,2}):(\d{2})$/.exec(text);
+      return {
+        el: el,
+        index: index,
+        minutes: m ? Number(m[1]) * 60 + Number(m[2]) : 24 * 60 + index
+      };
+    });
+    keyed.sort(function (a, b) {
+      return a.minutes - b.minutes || a.index - b.index;
+    });
+    keyed.forEach(function (item) { list.appendChild(item.el); });
   }
 
   function renderSelfStudy() {
@@ -220,6 +249,7 @@
         '<span>🕯️ 自定义自习</span></div>' +
         '</div></div>';
     }).join(''));
+    sortTodayItems();
   }
 
   function renderMealBreaks() {
@@ -238,6 +268,7 @@
         '<div class="ti-meta"><span>🍚 吃饭、喝水、休息一下</span></div>' +
         '</div></div>';
     }).join(''));
+    sortTodayItems();
   }
 
   function renderMealStrip() {
@@ -288,6 +319,7 @@
     renderCountdowns();
     renderSelfStudy();
     renderMealBreaks();
+    sortTodayItems();
   }
 
   function periodRow(index, time, total) {
@@ -315,6 +347,81 @@
     if (durInput) durInput.value = settings().classDuration || 45;
     const brInput = $('#setBreakDuration');
     if (brInput) brInput.value = settings().breakDuration || 10;
+    const morning = $('#genMorningStart');
+    if (morning) morning.value = (times[0] && times[0].start) || '08:00';
+    const breakData = settings().mealBreaks || {};
+    const lunch = breakData.lunch || {};
+    const dinner = breakData.dinner || {};
+    const lunchStart = $('#genLunchStart');
+    if (lunchStart) lunchStart.value = lunch.start || '12:00';
+    const lunchEnd = $('#genLunchEnd');
+    if (lunchEnd) lunchEnd.value = lunch.end || '14:00';
+    const dinnerStart = $('#genDinnerStart');
+    if (dinnerStart) dinnerStart.value = dinner.start || '17:40';
+    const dinnerEnd = $('#genDinnerEnd');
+    if (dinnerEnd) dinnerEnd.value = dinner.end || '19:00';
+    const eveningEnd = $('#genEveningEnd');
+    if (eveningEnd) eveningEnd.value = (times[count - 1] && times[count - 1].end) || '21:35';
+  }
+
+  function minutesText(mins) {
+    const m = Math.max(0, Math.min(23 * 60 + 59, Math.round(mins)));
+    return U.pad2(Math.floor(m / 60)) + ':' + U.pad2(m % 60);
+  }
+
+  function generateSchedule() {
+    const count = U.clampInt(settings().sections, 6, 12, 10);
+    const classMin = U.clampInt($('#setClassDuration') ? $('#setClassDuration').value : 45, 20, 180, 45);
+    const breakMin = U.clampInt($('#setBreakDuration') ? $('#setBreakDuration').value : 10, 0, 60, 10);
+    const morning = U.timeToMinutes($('#genMorningStart') ? $('#genMorningStart').value : '08:00');
+    let lunchStart = U.timeToMinutes($('#genLunchStart') ? $('#genLunchStart').value : '12:00');
+    let lunchEnd = U.timeToMinutes($('#genLunchEnd') ? $('#genLunchEnd').value : '14:00');
+    let dinnerStart = U.timeToMinutes($('#genDinnerStart') ? $('#genDinnerStart').value : '17:40');
+    let dinnerEnd = U.timeToMinutes($('#genDinnerEnd') ? $('#genDinnerEnd').value : '19:00');
+    let eveningEnd = U.timeToMinutes($('#genEveningEnd') ? $('#genEveningEnd').value : '21:35');
+    if (lunchStart <= morning) lunchStart = morning + classMin + breakMin;
+    if (lunchEnd <= lunchStart) lunchEnd = lunchStart + 90;
+    if (dinnerStart <= lunchEnd) dinnerStart = lunchEnd + classMin + breakMin;
+    if (dinnerEnd <= dinnerStart) dinnerEnd = dinnerStart + 80;
+    if (eveningEnd <= dinnerEnd) eveningEnd = dinnerEnd + classMin;
+    const slots = [];
+    function fill(start, end) {
+      let t = start;
+      while (t + classMin <= end && slots.length < count) {
+        slots.push({ start: minutesText(t), end: minutesText(t + classMin) });
+        t += classMin + breakMin;
+      }
+    }
+    fill(morning, lunchStart);
+    fill(lunchEnd, dinnerStart);
+    fill(dinnerEnd, eveningEnd);
+    /* 窗口不够时，从最后一节继续补足，避免课程表缺节 */
+    while (slots.length < count) {
+      const prev = slots.length ? U.timeToMinutes(slots[slots.length - 1].end) : eveningEnd;
+      slots.push({ start: minutesText(prev + breakMin), end: minutesText(prev + breakMin + classMin) });
+    }
+    const times = slots.slice(0, count);
+    while (times.length < 12) {
+      const prev = times.length ? U.timeToMinutes(times[times.length - 1].end) : eveningEnd;
+      times.push({ start: minutesText(prev + breakMin), end: minutesText(prev + breakMin + classMin) });
+    }
+    const mealBreaks = {
+      lunch: { enabled: true, start: minutesText(lunchStart), end: minutesText(lunchEnd), label: '午休' },
+      dinner: { enabled: true, start: minutesText(dinnerStart), end: minutesText(dinnerEnd), label: '晚饭' }
+    };
+    Store.updateSettings({
+      periodTimes: times,
+      classDuration: classMin,
+      breakDuration: breakMin,
+      mealBreaks: mealBreaks
+    }).then(function () {
+      renderPeriodEditor();
+      renderMealStrip();
+      App.renderSchedule();
+      App.renderToday();
+      if (typeof App.pushWidgetData === 'function') App.pushWidgetData();
+      UI.toast('时间表已生成：上午 ' + times[0].start + ' 开始，午休 ' + mealBreaks.lunch.start + '，晚饭 ' + mealBreaks.dinner.start);
+    });
   }
 
   function renderSelfStudyEditor() {
@@ -329,12 +436,20 @@
       const data = study[item.key] || {};
       const total = U.clampInt(settings().totalWeeks, 1, 30, 18);
       const weeks = Array.isArray(data.weeks) ? data.weeks : [];
+      const days = Array.isArray(data.days) ? data.days : [];
       const all = !weeks.length;
       let chips = '';
       for (let w = 1; w <= total; w += 1) {
         chips += '<button type="button" class="week-chip' + (all || weeks.indexOf(w) >= 0 ? ' is-on' : '') +
           '" data-study-week="' + item.key + '" data-week="' + w + '">' + w + '</button>';
       }
+      let dayChips = '';
+      ['一', '二', '三', '四', '五', '六', '日'].forEach(function (label, idx) {
+        const day = idx + 1;
+        const on = !days.length || days.indexOf(day) >= 0;
+        dayChips += '<button type="button" class="week-chip day-chip' + (on ? ' is-on' : '') +
+          '" data-study-day="' + item.key + '" data-day="' + day + '">' + label + '</button>';
+      });
       return '<div class="self-study-edit">' +
         '<div class="sse-head"><span>' + item.icon + ' ' + item.label + '</span>' +
         '<label class="switch"><input type="checkbox" data-study-enabled="' + item.key + '"' +
@@ -345,6 +460,8 @@
         '<input class="input compact time" type="time" data-study-end="' + item.key + '" value="' + esc(data.end || '') + '" />' +
         '<input class="input compact" type="text" maxlength="16" data-study-place="' + item.key + '" value="' + esc(data.place || '') + '" placeholder="地点" />' +
         '</div>' +
+        '<div class="week-chip-label">星期 · ' + (days.length ? days.map(function (d) { return '周' + ['一','二','三','四','五','六','日'][d - 1]; }).join('、') : '每天') + '</div>' +
+        '<div class="week-chips">' + dayChips + '</div>' +
         '<div class="week-chip-label">所在周 · ' + (all ? '全部周' : weeksLabel(weeks)) + '</div>' +
         '<div class="week-chips">' + chips + '</div>' +
         '</div>';
@@ -654,6 +771,8 @@
     if (apply) apply.addEventListener('click', applyDuration);
     const reapply = $('#btnReapplyPeriods');
     if (reapply) reapply.addEventListener('click', reapplyPeriods);
+    const generate = $('#btnGenerateSchedule');
+    if (generate) generate.addEventListener('click', generateSchedule);
 
     const study = $('#selfStudyEditor');
     if (study) {
@@ -671,6 +790,19 @@
         if (place) updateStudy(place.dataset.studyPlace, { place: place.value });
       });
       study.addEventListener('click', function (e) {
+        const dayChip = e.target.closest('[data-study-day]');
+        if (dayChip) {
+          const key = dayChip.dataset.studyDay;
+          const day = Number(dayChip.dataset.day);
+          const data = (settings().selfStudy || {})[key] || {};
+          let days = Array.isArray(data.days) ? data.days.slice() : [];
+          if (!days.length) days = [1, 2, 3, 4, 5, 6, 7];
+          if (days.indexOf(day) >= 0) days = days.filter(function (d) { return d !== day; });
+          else days.push(day);
+          days.sort(function (a, b) { return a - b; });
+          updateStudy(key, { days: days });
+          return;
+        }
         const chip = e.target.closest('[data-study-week]');
         if (!chip) return;
         const key = chip.dataset.studyWeek;
@@ -755,6 +887,16 @@
         });
       });
     }
+
+    const powerSave = $('#setPowerSave');
+    if (powerSave) {
+      powerSave.addEventListener('change', function () {
+        Store.updateSettings({ powerSave: !!powerSave.checked }).then(function () {
+          App.applyPowerSave();
+          UI.toast(powerSave.checked ? '省电模式已开启，减少动画和发热 🌿' : '省电模式已关闭');
+        });
+      });
+    }
   }
 
   App.applyUiAlpha = function () {
@@ -763,8 +905,14 @@
   };
 
   App.renderPlannerToday = renderPlannerToday;
-  App.renderPlannerSettings = function () {
-    renderPeriodEditor();
+  App.applyPowerSave = function () {
+    const on = !!(settings().powerSave);
+    document.documentElement.setAttribute('data-powersave', on ? 'on' : 'off');
+    const fx = $('#weatherFx');
+    if (fx) fx.style.display = on ? 'none' : '';
+  };
+
+  App.renderPlannerSettings = function () {    renderPeriodEditor();
     renderSelfStudyEditor();
     renderMealSettings();
     renderCountdownSettings();
@@ -778,6 +926,9 @@
     }
     const autoHomework = $('#setAutoHomework');
     if (autoHomework) autoHomework.checked = settings().autoHomework !== false;
+    const powerSave = $('#setPowerSave');
+    if (powerSave) powerSave.checked = !!settings().powerSave;
+    App.applyPowerSave();
     App.applyUiAlpha();
   };
 
@@ -797,6 +948,7 @@
 
   App.startPlanner = function () {
     this.applyUiAlpha();
+    this.applyPowerSave();
     renderPlannerToday();
     renderMealStrip();
     if (this._plannerTimer) clearInterval(this._plannerTimer);

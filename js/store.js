@@ -1,5 +1,5 @@
 /* ============================================================
- * 星海课表 · 数据层
+ * 太阳神课程表 · 数据层
  * 存储封装 / 设置项 / 课程模型 / 日期与周次工具 / 示例数据
  * ============================================================ */
 (function (global) {
@@ -55,6 +55,16 @@
       emoji: '⚠️',
       special: true,
       dark: true
+    },
+    {
+      name: '太阳神 × 错误文档',
+      main: '#f0a30a',
+      deep: '#b96b00',
+      soft: '#fff3cf',
+      preset: 'split',
+      emoji: '☀️⚠️',
+      special: true,
+      dark: false
     }
   ];
 
@@ -92,6 +102,17 @@
       bgId: 'aqua',
       motto: '水色的一天，慢慢来。',
       bg: 'linear-gradient(160deg,#f6feff 0%,#e3f8fb 45%,#f3fdff 100%)'
+    },
+    split: {
+      key: 'split',
+      name: '太阳神 × 错误文档',
+      label: '晨光 / 午后',
+      emoji: '☀️⚠️',
+      themeIndex: 10,
+      dark: false,
+      bgId: 'sun',
+      motto: '上午晒太阳，下午修错误文档。',
+      bg: 'linear-gradient(165deg,#fffdf4 0%,#ffe7a6 45%,#0b1324 100%)'
     }
   };
 
@@ -233,6 +254,14 @@
         veil: 'linear-gradient(180deg, rgba(2,4,10,0.78), rgba(3,7,15,0.9))'
       }
     }
+  };
+
+  /* 太阳神 × 错误文档：上午两个时段太阳神，下午两个时段错误文档 */
+  PRESET_PHASES.split = {
+    dawn: PRESET_PHASES.sun.dawn,
+    noon: PRESET_PHASES.sun.noon,
+    afternoon: PRESET_PHASES.error.afternoon,
+    night: PRESET_PHASES.error.night
   };
 
   /* 按真实时钟判断当前属于哪个时段（夜晚跨 0 点） */
@@ -427,8 +456,8 @@
       breakDuration: 10,
       /* 早/晚自习 */
       selfStudy: {
-        morning: { enabled: false, start: '07:30', end: '08:00', place: '教室', weeks: [] },
-        evening: { enabled: false, start: '19:00', end: '21:00', place: '图书馆', weeks: [] }
+        morning: { enabled: false, start: '07:30', end: '08:00', place: '教室', weeks: [], days: [] },
+        evening: { enabled: false, start: '19:00', end: '21:00', place: '图书馆', weeks: [], days: [] }
       },
       /* 午休 / 晚饭时间 */
       mealBreaks: {
@@ -442,7 +471,11 @@
       /* 下课后自动弹出记作业 */
       autoHomework: true,
       /* 卡片透明度 0.45 ~ 1 */
-      uiAlpha: 0.93
+      uiAlpha: 0.93,
+      /* 省电模式：减少动画/粒子，降低发热 */
+      powerSave: false,
+      /* 考试成绩记录 */
+      exams: []
     };
   }
 
@@ -500,8 +533,23 @@
     };
   }
 
-  function normalizeSelfStudy(raw) {
-    const base = {
+  function normalizeExam(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const title = str(raw.title, 24);
+    if (!title) return null;
+    const full = Math.max(1, Number(raw.full) || 100);
+    const score = Math.max(0, Math.min(750, Number(raw.score) || 0));
+    const date = parseDate(raw.date) ? dateKey(parseDate(raw.date)) : '';
+    return {
+      id: typeof raw.id === 'string' && raw.id ? raw.id : 'ex_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+      title: title,
+      date: date,
+      score: score,
+      full: full
+    };
+  }
+
+  function normalizeSelfStudy(raw) {    const base = {
       morning: { enabled: false, start: '07:30', end: '08:00', place: '教室', weeks: [] },
       evening: { enabled: false, start: '19:00', end: '21:00', place: '图书馆', weeks: [] }
     };
@@ -516,6 +564,11 @@
       base[key].weeks = Array.isArray(item.weeks)
         ? item.weeks.map(function (w) { return clampInt(w, 1, 30, 1); })
           .filter(function (w, i, arr) { return arr.indexOf(w) === i; })
+          .sort(function (a, b) { return a - b; })
+        : [];
+      base[key].days = Array.isArray(item.days)
+        ? item.days.map(function (d) { return clampInt(d, 1, 7, 1); })
+          .filter(function (d, i, arr) { return arr.indexOf(d) === i; })
           .sort(function (a, b) { return a - b; })
         : [];
     });
@@ -711,6 +764,8 @@
       base.countdowns = Array.isArray(base.countdowns) ? base.countdowns.map(normalizeCountdown).filter(Boolean) : [];
       base.todos = Array.isArray(base.todos) ? base.todos.map(normalizeTodo).filter(Boolean) : [];
       base.uiAlpha = Math.max(0.45, Math.min(1, Number(base.uiAlpha) || 0.93));
+      base.powerSave = !!base.powerSave;
+      base.exams = Array.isArray(base.exams) ? base.exams.map(normalizeExam).filter(Boolean) : [];
       if (!parseDate(base.semesterStart)) base.semesterStart = dateKey(mondayOf(new Date()));
 
       /* 从旧版升级到「太阳神」品牌：没有 designVersion 的存档只迁移一次外观，
@@ -723,7 +778,7 @@
         if (!savedSettings || savedSettings.nickname === '同学') base.nickname = '太阳神眷顾的同学';
         if (!savedSettings || savedSettings.avatar === '🐚') base.avatar = '🐈‍⬛';
       }
-      if (['sun', 'error', 'water'].indexOf(base.themePreset) < 0) base.themePreset = 'sun';
+      if (['sun', 'error', 'water', 'split'].indexOf(base.themePreset) < 0) base.themePreset = 'sun';
       base.themeIndex = clampInt(base.themeIndex, 0, THEMES.length - 1, 8);
       if (!Array.isArray(savedCourses) && savedCourses && typeof savedCourses === 'object' && Array.isArray(savedCourses.list)) {
         // 兼容 { list: [] } 结构
@@ -856,7 +911,7 @@
         }
       }
       if (next.themePreset !== undefined) {
-        next.themePreset = ['sun', 'error', 'water'].indexOf(String(next.themePreset)) >= 0
+        next.themePreset = ['sun', 'error', 'water', 'split'].indexOf(String(next.themePreset)) >= 0
           ? String(next.themePreset)
           : 'sun';
       }
@@ -1026,7 +1081,7 @@
 
     exportData() {
       return {
-        app: '星海课表',
+        app: '太阳神课程表',
         version: 3,
         exportedAt: new Date().toISOString(),
         settings: this.settings,

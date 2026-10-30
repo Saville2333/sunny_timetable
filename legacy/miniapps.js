@@ -236,6 +236,7 @@ function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == 
         renderNoteList();
         updateNoteStatus('已保存 · ' + formatNoteDate(Date.now()));
         UI.toast('笔记已保存 📝');
+        if (App.progressEvent) App.progressEvent('note');
       }
     });
   }
@@ -464,6 +465,7 @@ function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == 
     var minutes = Math.floor(seconds / 60);
     var coins = Math.max(1, Math.floor(minutes / 5));
     if (App.addSunCoins) App.addSunCoins(coins, reason);
+    if (App.progressEvent) App.progressEvent('focus', minutes);
   }
   function resetFocusState() {
     readFocusInputs();

@@ -10,7 +10,7 @@ function _toPrimitive(t, e) { if ("object" != _typeof(t) || !t) return t; var r;
 function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
 function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
 /* ============================================================
- * 星海课表 · 轻量 PDF 解析内核（pdf-lite）
+ * 太阳神课程表 · 轻量 PDF 解析内核（pdf-lite）
  * ------------------------------------------------------------
  * 纯前端、零依赖，用于从「教务系统导出的 PDF 课表」里提取文字与版面：
  *   1) 顺序扫描 PDF 对象（含对象流 ObjStm），不依赖 xref，容错坏文件

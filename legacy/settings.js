@@ -1,5 +1,5 @@
 /* ============================================================
- * 星海课表 · 设置与个性化
+ * 太阳神课程表 · 设置与个性化
  * 学期设置 / 主题色 / 背景 / 数据备份 / 昵称
  * ============================================================ */
 (function () {
@@ -233,21 +233,8 @@
       UI.toast('生成备份失败');
       return;
     }
-    if (typeof window.wusiShare === 'function') {
-      window.wusiShare({
-        blob: blob,
-        filename: filename,
-        title: '星海课表备份'
-      }).then(function () {
-        UI.toast('已发起导出 📤');
-      }).catch(function (err) {
-        console.error('[Settings] 导出失败', err);
-        UI.toast('导出失败，请重试');
-      });
-      return;
-    }
 
-    /* APK 内写入应用文件目录；网页使用浏览器下载 */
+    /* APK 内打开系统保存窗口；网页使用浏览器下载 */
     if (window.SunnyFile && typeof window.SunnyFile.saveText === 'function') {
       try {
         var saveToNative = function saveToNative(text) {
@@ -322,7 +309,7 @@
         onOk: function onOk() {
           var patch = null;
           if (rawSettings) {
-            var allowed = ['designVersion', 'themeIndex', 'themePreset', 'bgId', 'bgColor', 'semesterStart', 'totalWeeks', 'sections', 'showWeekend', 'nickname', 'avatar', 'autoTheme', 'bgFollowPhase', 'remindPreClass', 'remindPreMin', 'remindEndClass', 'remindEndMin', 'remindMeal', 'remindMealMin', 'remindSound', 'remindVibrate', 'remindPopup', 'weatherOn', 'weatherMode', 'weatherCity', 'weatherLat', 'weatherLon', 'weatherPlace', 'weatherManualCode', 'weatherManualTemp', 'weatherFx', 'weatherTheme', 'weatherOutfit', 'weatherUpdatedAt', 'periodTimes', 'classDuration', 'breakDuration', 'selfStudy', 'mealBreaks', 'countdowns', 'todos', 'autoHomework', 'uiAlpha'];
+            var allowed = ['designVersion', 'themeIndex', 'themePreset', 'bgId', 'bgColor', 'semesterStart', 'totalWeeks', 'sections', 'showWeekend', 'nickname', 'avatar', 'autoTheme', 'bgFollowPhase', 'remindPreClass', 'remindPreMin', 'remindEndClass', 'remindEndMin', 'remindMeal', 'remindMealMin', 'remindSound', 'remindVibrate', 'remindPopup', 'weatherOn', 'weatherMode', 'weatherCity', 'weatherLat', 'weatherLon', 'weatherPlace', 'weatherManualCode', 'weatherManualTemp', 'weatherFx', 'weatherTheme', 'weatherOutfit', 'weatherUpdatedAt', 'periodTimes', 'classDuration', 'breakDuration', 'selfStudy', 'mealBreaks', 'countdowns', 'todos', 'autoHomework', 'uiAlpha', 'powerSave', 'exams'];
             patch = {};
             allowed.forEach(function (key) {
               if (rawSettings[key] !== undefined && rawSettings[key] !== null) patch[key] = rawSettings[key];

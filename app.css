@@ -1,5 +1,5 @@
 /* ============================================================
-   星海课表 · 全局样式
+   太阳神课程表 · 全局样式
    白色 + 水色视觉，⭐ 灯串与 emoji 装饰
    ============================================================ */
 
@@ -6087,3 +6087,92 @@ html[data-preset="error"] {
 .note-editor font[size="3"] { font-size: 13px; }
 .note-editor font[size="4"] { font-size: 15px; }
 .note-editor font[size="5"] { font-size: 18px; }
+
+/* 属性 / 成就 / 成绩 / 彩蛋 / 省电 */
+.attribute-list { display: flex; flex-direction: column; gap: 6px; }
+.attr-row { display: flex; align-items: center; gap: 7px; }
+.attr-icon { width: 22px; text-align: center; font-size: 15px; flex: none; }
+.attr-main { flex: 1; min-width: 0; }
+.attr-head { display: flex; justify-content: space-between; font-size: 9.5px; color: var(--ink-2); margin-bottom: 2px; }
+.attr-head b { color: var(--ink); }
+.attr-bar { height: 6px; border-radius: 999px; background: rgba(var(--theme-rgb), 0.1); overflow: hidden; }
+.attr-bar i { display: block; height: 100%; border-radius: 999px; transition: width 0.3s ease; }
+.attr-xp { flex: none; font-size: 7.5px; color: var(--ink-3); }
+
+.exam-add { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.exam-add #examName { flex: 1; min-width: 120px; }
+.exam-add .input.compact { width: 76px; }
+.exam-row { display: flex; align-items: center; gap: 7px; padding: 7px 3px; border-bottom: 1px dashed var(--line); }
+.exam-row:last-child { border-bottom: 0; }
+.exam-main { flex: 1; min-width: 0; }
+.exam-main b { display: block; font-size: 10.5px; color: var(--ink); }
+.exam-main small { display: block; font-size: 8px; color: var(--ink-3); margin-top: 1px; }
+.exam-score { flex: none; font-size: 16px; font-weight: 900; color: var(--theme-deep); }
+.exam-score small { font-size: 8px; font-weight: 500; color: var(--ink-3); }
+.exam-pct { flex: none; font-size: 9px; color: var(--ink-3); }
+
+.achievement-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.achievement-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(var(--box-rgb), calc(var(--box-alpha) * 0.8));
+  opacity: 0.62;
+}
+.achievement-item.is-on {
+  opacity: 1;
+  border-color: rgba(240, 163, 10, 0.4);
+  background: linear-gradient(145deg, rgba(255, 248, 222, 0.9), rgba(255, 255, 255, 0.55));
+}
+.ach-icon { font-size: 18px; width: 24px; text-align: center; flex: none; }
+.ach-main { min-width: 0; }
+.ach-main b { display: block; font-size: 9.5px; color: var(--ink); }
+.ach-main small { display: block; margin-top: 2px; font-size: 7.5px; line-height: 1.4; color: var(--ink-3); }
+
+.confetti-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2000;
+  overflow: hidden;
+}
+.confetti-layer i {
+  position: absolute;
+  top: -14px;
+  width: 7px;
+  height: 11px;
+  border-radius: 2px;
+  animation: confettiFall 1.9s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translate3d(0, -10px, 0) rotate(0); opacity: 1; }
+  100% { transform: translate3d(var(--dx, 0), 100vh, 0) rotate(620deg); opacity: 0.2; }
+}
+
+html[data-powersave="on"] *,
+html[data-powersave="on"] *::before,
+html[data-powersave="on"] *::after {
+  animation-duration: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+}
+html[data-powersave="on"] .sun-decor,
+html[data-powersave="on"] .fairy-lights,
+html[data-powersave="on"] #weatherFx,
+html[data-powersave="on"] .hero-sunburst {
+  display: none !important;
+}
+.theme-item.preset-split .swatch {
+  background: linear-gradient(135deg, #fff4cf 0%, #f0a30a 45%, #0b1324 46%, #4c8dff 100%) !important;
+}
+.theme-item.preset-split .tname { color: #5b3b00; }
+html[data-preset-mode="split"] .header-title::after {
+  content: ' ☀️⚠️';
+  font-size: 0.75em;
+}
+.gen-meal-times { flex-wrap: wrap; }
+.gen-meal-times .input.time { width: 76px; }
+.gen-meal-times .unit-text { margin-right: 2px; }

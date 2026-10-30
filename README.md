@@ -4,7 +4,7 @@
 
 - `index.html`：网页入口（现代浏览器）
 - `index-legacy.html`：旧 WebView / 旧浏览器入口（ES5 版本）
-- `download/sunny-timetable-v2.4.0.apk`：Android 安装包
+- `download/sunny-timetable-v2.5.1.apk`：Android 安装包
 - `js/`、`legacy/`、`icons/`、`app.css`、`manifest.webmanifest`、`sw.js`
 - `.nojekyll`：告诉 GitHub Pages 不要用 Jekyll 处理这些文件
 
@@ -102,17 +102,17 @@ https://你的用户名.github.io/sunny-timetable/
 APK 直链：
 
 ```text
-https://你的用户名.github.io/sunny-timetable/download/sunny-timetable-v2.4.0.apk
+https://你的用户名.github.io/sunny-timetable/download/sunny-timetable-v2.5.1.apk
 ```
 
-页面「小窝」里也有「📥 下载 APK」按钮。
+
 
 ### 注意
 
 - 免费 GitHub Pages 一般需要 **Public 仓库**。
 - GitHub Pages 默认 HTTPS，PWA、定位天气、Service Worker 都可以正常工作。
 - 课表数据仍只保存在浏览器/手机本地，不会上传到 GitHub。
-- APK 安装前请**先卸载旧版 2.0.x**（签名不同，不能覆盖安装）；2.1.0 → 2.4.0 可直接覆盖。
+- APK 安装前请**先卸载旧版 2.0.x**（签名不同，不能覆盖安装）；2.1.0 → 2.5.1 可直接覆盖。
 
 ---
 
@@ -127,7 +127,7 @@ git push
 如果手机/电脑还显示旧页面：
 
 1. 强制刷新
-2. 或把 `sw.js` 里的 `const CACHE = 'sunny-timetable-v6';` 改成 `v5`
+2. 或把 `sw.js` 里的 `const CACHE = 'sunny-timetable-v8';` 改成 `v5`
 3. 再提交推送
 
 ---
@@ -151,6 +151,8 @@ git push
 **想绑定自己的域名**
 
 Settings → Pages → Custom domain，填入域名，再按 GitHub 提示配置 DNS 的 `CNAME` 记录。
+
+
 
 
 

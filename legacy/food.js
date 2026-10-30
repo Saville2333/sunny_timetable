@@ -1,6 +1,6 @@
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 /* ============================================================
- * 星海课表 · 今天吃啥（幸运转盘）
+ * 太阳神课程表 · 今天吃啥（幸运转盘）
  * Canvas 转盘 / 分类筛选 / 避开最近 / 自定义菜单 / 历史记录
  * ============================================================ */
 (function () {

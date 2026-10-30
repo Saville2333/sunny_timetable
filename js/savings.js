@@ -71,6 +71,7 @@
         save();
         addInput.value = '';
         render();
+        if (App.progressEvent) App.progressEvent('savings');
         UI.toast('已存 ¥' + amount + ' · 离目标更近了 🐖');
       });
     }

@@ -71,6 +71,7 @@ function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == 
         save();
         addInput.value = '';
         render();
+        if (App.progressEvent) App.progressEvent('savings');
         UI.toast('已存 ¥' + amount + ' · 离目标更近了 🐖');
       });
     }

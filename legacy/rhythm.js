@@ -1,6 +1,6 @@
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 /* ============================================================
- * 星海课表 · 时段与提醒
+ * 太阳神课程表 · 时段与提醒
  * 1) 随现实时间一天四段检查（清晨 / 中午 / 下午 / 晚上）
  * 2) 课前提醒、临近下课提醒、取外卖提醒
  * 3) 提醒横幅、提示音、今日提醒时间表

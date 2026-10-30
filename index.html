@@ -131,7 +131,9 @@
         <span class="cw-badge" id="catWhisperBadge">☀️ SUN</span>
       </button>
 
-      <!-- 今日提醒时间表：课前 20 分钟 / 快下课 / 点外卖 -->
+      <div class="today-list" id="todayList"></div>
+
+      <!-- 今日提醒时间表：课程、早晚自习、午休/晚修之后 -->
       <div class="remind-plan" id="remindPlan">
         <div class="rp-head">
           <span class="rp-title">⚠️ 猫猫提醒</span>
@@ -141,7 +143,15 @@
         <button class="rp-more" id="btnRemindOverview" type="button">查看今日提醒时间表 ›</button>
       </div>
 
-      <div class="today-list" id="todayList"></div>
+      <!-- 太阳神属性 -->
+      <div class="section planner-section" id="attributePanel">
+        <div class="section-head">
+          <h3 class="section-title">📊 太阳神属性</h3>
+          <span class="section-badge" id="attributeTotal">Lv.1</span>
+        </div>
+        <div class="attribute-list" id="attributeList"></div>
+        <div class="remind-note">上完课、完成待办、专注和记笔记都会增加属性经验，升级会有奖励。</div>
+      </div>
 
       <!-- 今日待办：可手动添加，也会在下课时弹窗添加 -->
       <div class="section planner-section" id="todoSection">
@@ -579,41 +589,51 @@
         </div>
       </div>
 
-      <!-- 可编辑作息时间 -->
+      <!-- 一键生成作息：早餐 / 上课 / 午休 / 晚饭 -->
       <div class="section planner-section" id="periodSettingsSection">
-        <h3 class="section-title">⏰ 上下课时间与下课时长</h3>
+        <h3 class="section-title">⏰ 一键生成时间表</h3>
         <div class="setting-row">
-          <div class="sr-text"><span>统一每节时长</span><small>只改下课时间，保留各节上课时间</small></div>
+          <div class="sr-text"><span>早餐后开始上课</span><small>上午第一节时间</small></div>
+          <input class="input compact time" id="genMorningStart" type="time" />
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>每节课时长 / 课间</span><small>自动排课使用</small></div>
           <div class="sr-controls">
             <input class="input compact" id="setClassDuration" type="number" min="20" max="180" step="5" />
-            <span class="unit-text">分钟</span>
-            <button class="btn ghost mini-btn" id="btnApplyDuration" type="button">应用</button>
+            <span class="unit-text">分</span>
+            <input class="input compact" id="setBreakDuration" type="number" min="0" max="60" step="5" />
+            <span class="unit-text">分课间</span>
           </div>
         </div>
         <div class="setting-row">
-          <div class="sr-text"><span>课间休息</span><small>用于「自动重排」下一节上课时间</small></div>
-          <div class="sr-controls">
-            <input class="input compact" id="setBreakDuration" type="number" min="0" max="60" step="5" />
-            <span class="unit-text">分钟</span>
-            <button class="btn ghost mini-btn" id="btnReapplyPeriods" type="button">自动重排</button>
+          <div class="sr-text"><span>午休 / 晚饭</span><small>吃饭休息时间</small></div>
+          <div class="sr-controls gen-meal-times">
+            <input class="input compact time" id="genLunchStart" type="time" />
+            <span class="pr-dash">—</span>
+            <input class="input compact time" id="genLunchEnd" type="time" />
+            <span class="unit-text">午</span>
+            <input class="input compact time" id="genDinnerStart" type="time" />
+            <span class="pr-dash">—</span>
+            <input class="input compact time" id="genDinnerEnd" type="time" />
+            <span class="unit-text">晚</span>
           </div>
         </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>晚间最晚下课</span><small>晚课不超过这个时间</small></div>
+          <input class="input compact time" id="genEveningEnd" type="time" />
+        </div>
+        <div class="row-btns">
+          <button class="btn primary grow" id="btnGenerateSchedule" type="button">✨ 自动生成时间表</button>
+        </div>
         <div class="period-editor" id="periodEditor"></div>
-        <div class="remind-note">每节课都可以单独改上课/下课时间；修改后课表、今日、提醒和小组件都会重新计算。</div>
+        <div class="remind-note">生成后仍可逐节微调；课表、今日、提醒和小组件会自动重算。</div>
       </div>
 
       <!-- 早/晚自习 -->
       <div class="section planner-section" id="selfStudySettingsSection">
         <h3 class="section-title">🌅 早 / 晚自习</h3>
         <div id="selfStudyEditor"></div>
-        <div class="remind-note">打开开关后，会在「太阳神的一天」显示自习地点与时间。</div>
-      </div>
-
-      <!-- 午休 / 晚饭 -->
-      <div class="section planner-section" id="mealSettingsSection">
-        <h3 class="section-title">🍜 午休 / 晚饭时间</h3>
-        <div id="mealBreakEditor"></div>
-        <div class="remind-note">会显示在课表上方和「太阳神的一天」课程列表里，提醒你吃饭休息。</div>
+        <div class="remind-note">可以选择周一到周日和所在周次，显示在「太阳神的一天」课程列表里。</div>
       </div>
 
       <!-- 假期 / 考试倒计时 -->
@@ -644,6 +664,13 @@
             <input class="range" id="setUiAlpha" type="range" min="45" max="100" step="1" />
             <span class="unit-text" id="uiAlphaText">93%</span>
           </div>
+        </div>
+        <div class="setting-row">
+          <div class="sr-text"><span>省电模式</span><small>关闭粒子、光效和大部分动画，减少发热</small></div>
+          <label class="switch">
+            <input type="checkbox" id="setPowerSave" />
+            <span class="switch-track"><span class="switch-dot"></span></span>
+          </label>
         </div>
       </div>
 
@@ -868,25 +895,35 @@
         <button class="btn danger-ghost full" id="btnResetAll" type="button">⚠️ 清空全部数据</button>
       </div>
 
-      <div class="section">
-        <h3 class="section-title">📱 桌面小组件</h3>
-        <p>安装 APK 后，长按手机桌面 → 小组件 → 找到「太阳神课程表」。</p>
-        <p class="about-small">支持小 / 中 / 大三种尺寸：小尺寸显示天气、下节课时间和地点；中尺寸显示今日 2 节课程；大尺寸显示完整今日课表。拖动小组件边缘即可调整大小。</p>
+      <!-- 考试成绩记录 -->
+      <div class="section planner-section" id="examSection">
+        <div class="section-head">
+          <h3 class="section-title">📝 考试成绩记录</h3>
+          <span class="section-badge" id="examStats">—</span>
+        </div>
+        <div class="exam-add">
+          <input class="input" id="examName" type="text" maxlength="20" placeholder="考试名称，例如：高数期中" />
+          <input class="input compact" id="examDate" type="date" />
+          <input class="input compact" id="examScore" type="number" min="0" max="750" placeholder="分数" />
+          <input class="input compact" id="examFull" type="number" min="1" max="750" value="100" placeholder="满分" />
+          <button class="btn primary mini-btn" id="btnAddExam" type="button">记录</button>
+        </div>
+        <div class="exam-list" id="examList"></div>
       </div>
 
-      <div class="section">
-        <h3 class="section-title">📥 Android 安装包</h3>
-        <p>不想用网页版？下载 APK，安装后还可以把「太阳神今日课表」放到手机桌面。</p>
-        <p class="about-small">Android 5.0+ · v2.4.0 · 安装前请先卸载旧版 2.0.x</p>
-        <div class="row-btns">
-          <a class="btn primary grow" href="download/sunny-timetable-v2.4.0.apk" download>📥 下载 APK</a>
+      <!-- 成就 -->
+      <div class="section planner-section" id="achievementSection">
+        <div class="section-head">
+          <h3 class="section-title">🏆 太阳神成就</h3>
+          <span class="section-badge" id="achievementStats">0 / 0</span>
         </div>
+        <div class="achievement-grid" id="achievementGrid"></div>
       </div>
 
       <div class="section about">
         <h3 class="section-title">🌻 关于太阳神的随身陪伴课程表</h3>
         <p>太阳神、猫猫和颜文字一起陪你上课。白黄是太阳，黑蓝是错误文档，都是今天的你。</p>
-        <p class="about-small">数据仅保存在本机 · 不收集任何个人信息 · v2.4.0 · ☀️🐈‍⬛⚠️</p>
+        <p class="about-small">数据仅保存在本机 · 不收集任何个人信息 · v2.5.1 · ☀️🐈‍⬛⚠️</p>
       </div>
 
       <div class="page-bottom-space"></div>
@@ -1174,11 +1211,14 @@
   <script src="js/shop.js"></script>
   <script src="js/savings.js"></script>
   <script src="js/mindmap.js"></script>
+  <script src="js/progress.js"></script>
   <script src="js/import-browser.js"></script>
   <script src="js/word-import.js"></script>
   <script src="js/food.js"></script>
 </body>
 </html>
+
+
 
 
 

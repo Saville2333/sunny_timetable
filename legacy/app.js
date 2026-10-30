@@ -3,7 +3,7 @@ function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { 
 function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
 function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
 /* ============================================================
- * 星海课表 · 主逻辑
+ * 太阳神课程表 · 主逻辑
  * 课表渲染 / 今日 / 导入 / 设置 / 课程编辑 / 主题与背景
  * ============================================================ */
 (function () {
@@ -208,11 +208,13 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
       root.style.setProperty('--preset-accent', theme.main);
       root.style.setProperty('--preset-deep', theme.deep);
       root.style.setProperty('--preset-soft', theme.soft);
+      var darkPreset = preset === 'error' || preset === 'split' && (phase.key === 'afternoon' || phase.key === 'night');
       /* 边框/分隔线跟随主题色，避免换到橙、蓝、紫时仍残留水色边线 */
-      root.style.setProperty('--line', 'rgba(' + hexToRgb(theme.main) + ', ' + (preset === 'error' ? '0.28' : '0.18') + ')');
-      var darkPreset = preset === 'error';
+      root.style.setProperty('--line', 'rgba(' + hexToRgb(theme.main) + ', ' + (darkPreset ? '0.28' : '0.18') + ')');
       root.style.setProperty('--phase-veil', s.autoTheme || darkPreset ? phase.veil : 'linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0.86))');
-      root.setAttribute('data-preset', preset);
+      var cssPreset = preset === 'split' ? darkPreset ? 'error' : 'sun' : preset;
+      root.setAttribute('data-preset', cssPreset);
+      root.setAttribute('data-preset-mode', preset);
       root.setAttribute('data-phase', phase.key || 'noon');
       root.setAttribute('data-phase-auto', s.autoTheme ? 'on' : 'off');
       root.setAttribute('data-preset-dark', darkPreset ? 'on' : 'off');
