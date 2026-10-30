@@ -286,18 +286,55 @@
       return;
     }
 
-    if (typeof window.wusiShare !== 'function') {
-      UI.toast('请升级到无思微程序最新版本以导出备份');
+    if (typeof window.wusiShare === 'function') {
+      window.wusiShare({ blob: blob, filename: filename, title: '星海课表备份' })
+        .then(function () {
+          UI.toast('已发起导出 📤');
+        })
+        .catch(function (err) {
+          console.error('[Settings] 导出失败', err);
+          UI.toast('导出失败，请重试');
+        });
       return;
     }
-    window.wusiShare({ blob: blob, filename: filename, title: '星海课表备份' })
-      .then(function () {
-        UI.toast('已发起导出 📤');
-      })
-      .catch(function (err) {
-        console.error('[Settings] 导出失败', err);
+
+    /* APK 内写入应用文件目录；网页使用浏览器下载 */
+    if (window.SunnyFile && typeof window.SunnyFile.saveText === 'function') {
+      try {
+        const saveToNative = function (text) {
+          window.SunnyFile.saveText(filename, text);
+          UI.toast('请选择备份保存位置 📤');
+        };
+        if (typeof blob.text === 'function') {
+          blob.text().then(saveToNative);
+        } else {
+          const reader = new FileReader();
+          reader.onload = function () { saveToNative(String(reader.result || '')); };
+          reader.onerror = function () { UI.toast('导出失败，请重试'); };
+          reader.readAsText(blob);
+        }
+      } catch (e) {
+        console.error('[Settings] 保存备份失败', e);
         UI.toast('导出失败，请重试');
-      });
+      }
+      return;
+    }
+
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1200);
+      UI.toast('已开始下载备份 📤');
+    } catch (e) {
+      console.error('[Settings] 浏览器导出失败', e);
+      UI.toast('当前浏览器不支持直接下载，请用 APK 或电脑浏览器导出');
+    }
   };
 
   App.handleImportFile = function (file) {
@@ -347,7 +384,7 @@
               'weatherOn', 'weatherMode', 'weatherCity', 'weatherLat', 'weatherLon', 'weatherPlace',
               'weatherManualCode', 'weatherManualTemp', 'weatherFx', 'weatherTheme', 'weatherOutfit',
               'weatherUpdatedAt',
-              'periodTimes', 'classDuration', 'breakDuration', 'selfStudy', 'countdowns', 'todos',
+              'periodTimes', 'classDuration', 'breakDuration', 'selfStudy', 'mealBreaks', 'countdowns', 'todos',
               'autoHomework', 'uiAlpha'
             ];
             patch = {};

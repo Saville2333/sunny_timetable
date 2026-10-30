@@ -40,6 +40,10 @@
     if (name === 'notes') this.enterNotesApp();
     if (name === 'focus') this.renderFocus();
     if (name === 'random') this.enterRandomApp();
+    if (name === 'gpa' && typeof this.enterGpaApp === 'function') this.enterGpaApp();
+    if (name === 'shop' && typeof this.enterShopApp === 'function') this.enterShopApp();
+    if (name === 'savings' && typeof this.enterSavingsApp === 'function') this.enterSavingsApp();
+    if (name === 'mindmap' && typeof this.enterMindmapApp === 'function') this.enterMindmapApp();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -240,6 +244,13 @@
     const editor = $('#noteEditor');
     if (!editor) return;
     editor.focus();
+    if (savedRange) {
+      try {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+      } catch (e) { /* ignore */ }
+    }
     try { document.execCommand(cmd, false, value || null); } catch (e) { /* ignore */ }
     scheduleNoteSave();
   }
@@ -358,6 +369,10 @@
     if (hr) hr.addEventListener('click', function () { execCommand('insertHorizontalRule'); });
     const color = $('#noteColor');
     if (color) color.addEventListener('input', function () { execCommand('foreColor', color.value); });
+    const fontSize = $('#noteFontSize');
+    if (fontSize) fontSize.addEventListener('change', function () {
+      execCommand('fontSize', fontSize.value);
+    });
     const colors = $('#noteColors');
     if (colors) {
       colors.innerHTML = NOTE_COLORS.map(function (c) {
@@ -392,33 +407,144 @@
     }
   }
 
-  /* ---------------- 专注番茄钟 ---------------- */
-  let focusTotal = 25 * 60;
+  /* ---------------- 专注（番茄 / 连续 / 正计时 / 倒计时） ---------------- */
+  let focusMode = 'pomodoro';
+  let focusFocusSec = 25 * 60;
+  let focusBreakSec = 5 * 60;
+  let focusRounds = 2;
+  let focusPhase = 'focus';
+  let focusRound = 1;
   let focusLeft = 25 * 60;
+  let focusElapsed = 0;
   let focusTimer = null;
   let focusRunning = false;
+  const FOCUS_PREF_KEY = 'wusi_focus_prefs_v1';
+
+  function loadFocusPrefs() {
+    const raw = Store.read(FOCUS_PREF_KEY);
+    if (!raw || typeof raw !== 'object') return;
+    if (raw.mode && ['pomodoro', 'continuous', 'stopwatch', 'countdown'].indexOf(raw.mode) >= 0) focusMode = raw.mode;
+    if (raw.focus) focusFocusSec = Math.max(60, Number(raw.focus) * 60);
+    if (raw.break) focusBreakSec = Math.max(60, Number(raw.break) * 60);
+    if (raw.rounds) focusRounds = Math.max(1, Math.min(12, Number(raw.rounds)));
+    const min = $('#focusMinutes');
+    const br = $('#focusBreak');
+    const rounds = $('#focusRounds');
+    if (min) min.value = String(Math.round(focusFocusSec / 60));
+    if (br) br.value = String(Math.round(focusBreakSec / 60));
+    if (rounds) rounds.value = String(focusRounds);
+    focusLeft = focusFocusSec;
+  }
 
   function formatFocus(sec) {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    const s = Math.max(0, Math.floor(sec));
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+  }
+
+  function readFocusInputs() {
+    const min = $('#focusMinutes');
+    const br = $('#focusBreak');
+    const rounds = $('#focusRounds');
+    focusFocusSec = Math.max(60, (Number(min && min.value) || 25) * 60);
+    focusBreakSec = Math.max(60, (Number(br && br.value) || 5) * 60);
+    focusRounds = Math.max(1, Math.min(12, Number(rounds && rounds.value) || 2));
+    Store.write(FOCUS_PREF_KEY, {
+      mode: focusMode,
+      focus: Math.round(focusFocusSec / 60),
+      break: Math.round(focusBreakSec / 60),
+      rounds: focusRounds
+    });
+  }
+
+  function focusEarnCoins(seconds, reason) {
+    const minutes = Math.floor(seconds / 60);
+    const coins = Math.max(1, Math.floor(minutes / 5));
+    if (App.addSunCoins) App.addSunCoins(coins, reason);
+  }
+
+  function resetFocusState() {
+    readFocusInputs();
+    focusPhase = 'focus';
+    focusRound = 1;
+    focusElapsed = 0;
+    focusLeft = focusMode === 'stopwatch' ? 0 : focusFocusSec;
+    renderFocus();
   }
 
   function renderFocus() {
     const time = $('#focusTime');
     const label = $('#focusLabel');
+    const sub = $('#focusSub');
     const ring = $('#focusRing');
-    if (time) time.textContent = formatFocus(focusLeft);
-    if (label) label.textContent = focusRunning ? '专注中 · 猫猫陪你' : (focusLeft === focusTotal ? '准备开始' : '已暂停');
+    if (time) time.textContent = formatFocus(focusMode === 'stopwatch' ? focusElapsed : focusLeft);
+    if (label) {
+      if (focusRunning) label.textContent = focusPhase === 'break' ? '休息中 · 猫猫陪你' : '专注中 · 猫猫陪你';
+      else label.textContent = focusPhase === 'break' ? '休息一下' : (focusMode === 'stopwatch' && focusElapsed > 0 ? '已暂停' : '准备开始');
+    }
+    if (sub) {
+      sub.textContent = focusMode === 'continuous'
+        ? '第 ' + focusRound + ' / ' + focusRounds + ' 轮 · 专注 ' + Math.round(focusFocusSec / 60) + ' 分，休息 ' + Math.round(focusBreakSec / 60) + ' 分'
+        : focusMode === 'stopwatch' ? '正计时 · 停止后按已完成时长结算太阳币'
+          : '完成专注可以赚太阳币 ☀️';
+    }
     if (ring) {
-      const p = focusTotal ? (1 - focusLeft / focusTotal) * 100 : 0;
+      let p = 0;
+      if (focusMode === 'stopwatch') p = Math.min(100, focusElapsed / 1500 * 100);
+      else if (focusPhase === 'break') p = 100;
+      else if (focusFocusSec > 0) p = Math.max(0, Math.min(100, (1 - focusLeft / focusFocusSec) * 100));
       ring.style.setProperty('--focus-p', p.toFixed(1) + '%');
+      ring.classList.toggle('is-break', focusPhase === 'break');
     }
     const start = $('#btnFocusStart');
-    if (start) start.textContent = focusRunning ? '暂停' : (focusLeft === focusTotal ? '开始专注' : '继续');
+    if (start) {
+      start.textContent = focusRunning ? '暂停' : (focusMode === 'stopwatch' && focusElapsed > 0 ? '继续' : '开始专注');
+      start.classList.toggle('is-running', focusRunning);
+    }
     H.$$('.focus-mode').forEach(function (btn) {
-      btn.classList.toggle('is-on', Number(btn.dataset.focusMin) * 60 === focusTotal);
+      btn.classList.toggle('is-on', btn.dataset.focusMode === focusMode);
     });
+    const roundsWrap = $('#focusRoundsWrap');
+    if (roundsWrap) roundsWrap.hidden = focusMode !== 'continuous';
+    const cfg = $('#focusConfig');
+    if (cfg) cfg.hidden = focusMode === 'stopwatch';
+    if (App.updateCoinDisplays) App.updateCoinDisplays();
+  }
+
+  function focusTick() {
+    if (focusMode === 'stopwatch') {
+      focusElapsed += 1;
+      renderFocus();
+      return;
+    }
+    focusLeft -= 1;
+    if (focusLeft <= 0) {
+      if (focusPhase === 'focus') {
+        focusEarnCoins(focusFocusSec, '专注完成');
+        focusBeep();
+        if (focusMode === 'continuous' && focusRound < focusRounds) {
+          focusPhase = 'break';
+          focusLeft = focusBreakSec;
+          UI.toast('第 ' + focusRound + ' 轮完成，休息 ' + Math.round(focusBreakSec / 60) + ' 分钟');
+          renderFocus();
+          return;
+        }
+        stopFocus();
+        focusLeft = 0;
+        renderFocus();
+        UI.toast(focusMode === 'continuous' ? '连续专注完成！今天也很棒 ☀️' : '专注完成！休息一下再继续 ☕');
+        return;
+      }
+      focusPhase = 'focus';
+      focusRound += 1;
+      focusLeft = focusFocusSec;
+      focusBeep();
+      UI.toast('休息结束，开始第 ' + focusRound + ' 轮专注');
+      renderFocus();
+      return;
+    }
+    renderFocus();
   }
 
   function focusBeep() {
@@ -450,32 +576,35 @@
   function toggleFocus() {
     if (focusRunning) {
       stopFocus();
+      if (focusMode === 'stopwatch' && focusElapsed >= 60) {
+        focusEarnCoins(focusElapsed, '正计时结算');
+        focusElapsed = 0;
+      }
       renderFocus();
       return;
     }
+    if (focusMode === 'stopwatch') {
+      if (focusElapsed === 0) focusLeft = 0;
+    } else if (focusLeft <= 0) {
+      resetFocusState();
+    }
     focusRunning = true;
-    focusTimer = setInterval(function () {
-      focusLeft -= 1;
-      if (focusLeft <= 0) {
-        focusLeft = 0;
-        stopFocus();
-        renderFocus();
-        focusBeep();
-        UI.toast('专注完成！休息一下再继续 ☕');
-      } else {
-        renderFocus();
-      }
-    }, 1000);
+    focusTimer = setInterval(focusTick, 1000);
     renderFocus();
   }
 
   function resetFocus() {
     stopFocus();
-    focusLeft = focusTotal;
+    focusElapsed = 0;
+    focusPhase = 'focus';
+    focusRound = 1;
+    readFocusInputs();
+    focusLeft = focusMode === 'stopwatch' ? 0 : focusFocusSec;
     renderFocus();
   }
 
   function bindFocusEvents() {
+    loadFocusPrefs();
     const start = $('#btnFocusStart');
     if (start) start.addEventListener('click', toggleFocus);
     const reset = $('#btnFocusReset');
@@ -483,11 +612,26 @@
     H.$$('.focus-mode').forEach(function (btn) {
       btn.addEventListener('click', function () {
         stopFocus();
-        focusTotal = Number(btn.dataset.focusMin) * 60;
-        focusLeft = focusTotal;
+        focusMode = btn.dataset.focusMode || 'pomodoro';
+        focusElapsed = 0;
+        readFocusInputs();
+        focusLeft = focusFocusSec;
+        focusPhase = 'focus';
+        focusRound = 1;
         renderFocus();
       });
     });
+    ['focusMinutes', 'focusBreak', 'focusRounds'].forEach(function (id) {
+      const input = document.getElementById(id);
+      if (input) input.addEventListener('change', function () {
+        if (!focusRunning) {
+          readFocusInputs();
+          if (focusMode !== 'continuous') focusLeft = focusFocusSec;
+          renderFocus();
+        }
+      });
+    });
+    if (App.updateCoinDisplays) App.updateCoinDisplays();
   }
 
   /* ---------------- 随机决定 ---------------- */

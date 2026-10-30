@@ -72,6 +72,8 @@
         <button class="wk-today" id="wkTodayBtn" type="button">☀ 本周</button>
       </div>
 
+      <div class="meal-strip" id="mealStrip"></div>
+
       <div class="timetable-card">
         <div class="timetable-scroll" id="timetableScroll">
           <div class="tt-grid" id="ttGrid"></div>
@@ -164,14 +166,6 @@
         <div class="countdown-all" id="countdownAll"></div>
       </div>
 
-      <!-- 早/晚自习 -->
-      <div class="section planner-section" id="selfStudySection">
-        <div class="section-head">
-          <h3 class="section-title">🌅 早 / 晚自习</h3>
-          <span class="section-badge" id="selfStudyStats">可自定义</span>
-        </div>
-        <div class="self-study-list" id="selfStudyList"></div>
-      </div>
     </section>
 
     <!-- ================= 小程序合集 ================= -->
@@ -202,6 +196,26 @@
           <span class="ac-icon">🎲</span>
           <span class="ac-name">随机决定</span>
           <span class="ac-sub">选择困难症急救</span>
+        </button>
+        <button class="app-card app-gpa" type="button" data-app="gpa">
+          <span class="ac-icon">🧮</span>
+          <span class="ac-name">GPA 计算器</span>
+          <span class="ac-sub">学分绩点 · 加权平均</span>
+        </button>
+        <button class="app-card app-shop" type="button" data-app="shop">
+          <span class="ac-icon">🛍️</span>
+          <span class="ac-name">太阳小铺</span>
+          <span class="ac-sub">太阳币兑换虚拟商品</span>
+        </button>
+        <button class="app-card app-savings" type="button" data-app="savings">
+          <span class="ac-icon">🐖</span>
+          <span class="ac-name">攒钱计划</span>
+          <span class="ac-sub">目标 · 进度 · 存一笔</span>
+        </button>
+        <button class="app-card app-mind" type="button" data-app="mindmap">
+          <span class="ac-icon">🧠</span>
+          <span class="ac-name">思维导图</span>
+          <span class="ac-sub">中心主题 · 分支整理</span>
         </button>
       </div>
 
@@ -274,6 +288,12 @@
               <button type="button" class="nt-btn" id="btnNoteHr" title="分割线">—</button>
               <span class="nt-colors" id="noteColors"></span>
               <input type="color" id="noteColor" class="note-color" value="#f0a30a" title="字体颜色" />
+              <select class="input compact select note-size" id="noteFontSize" title="选中文字大小">
+                <option value="2">小字</option>
+                <option value="3" selected>正文</option>
+                <option value="4">大字</option>
+                <option value="5">特大</option>
+              </select>
               <button type="button" class="nt-btn" id="btnNotePhoto" title="插入照片">📷</button>
               <input type="file" id="notePhotoInput" accept="image/*" multiple hidden />
               <button type="button" class="nt-btn nt-save" id="btnSaveNote" title="保存">保存</button>
@@ -287,23 +307,37 @@
       <div class="mini-panel" id="miniFocus" hidden>
         <div class="mini-app-head">
           <button class="mini-back" type="button" data-app-back="1">‹ 小程序</button>
-          <span>⏱️ 专注番茄钟</span>
+          <span>⏱️ 专注</span>
+        </div>
+        <div class="focus-deco" aria-hidden="true">
+          <span>☀️</span><span>🐈‍⬛</span><span>⭐</span><span>☁️</span>
         </div>
         <div class="focus-card">
+          <div class="focus-tabs">
+            <button type="button" class="focus-mode is-on" data-focus-mode="pomodoro">番茄钟</button>
+            <button type="button" class="focus-mode" data-focus-mode="continuous">连续专注</button>
+            <button type="button" class="focus-mode" data-focus-mode="stopwatch">正计时</button>
+            <button type="button" class="focus-mode" data-focus-mode="countdown">倒计时</button>
+          </div>
           <div class="focus-ring" id="focusRing">
             <div class="focus-time" id="focusTime">25:00</div>
             <div class="focus-label" id="focusLabel">准备开始</div>
           </div>
+          <div class="focus-sub" id="focusSub">完成专注可以赚太阳币 ☀️</div>
           <div class="focus-actions">
             <button class="btn primary" id="btnFocusStart" type="button">开始专注</button>
             <button class="btn ghost" id="btnFocusReset" type="button">重置</button>
           </div>
-          <div class="focus-modes">
-            <button type="button" class="focus-mode is-on" data-focus-min="25">25 分钟</button>
-            <button type="button" class="focus-mode" data-focus-min="45">45 分钟</button>
-            <button type="button" class="focus-mode" data-focus-min="5">5 分钟</button>
+          <div class="focus-config" id="focusConfig">
+            <label>专注 <input class="input compact" id="focusMinutes" type="number" min="1" max="180" value="25" /> 分</label>
+            <label>休息 <input class="input compact" id="focusBreak" type="number" min="1" max="60" value="5" /> 分</label>
+            <label id="focusRoundsWrap">轮数 <input class="input compact" id="focusRounds" type="number" min="1" max="12" value="2" /></label>
           </div>
-          <div class="focus-tip">完成一次专注，猫猫会替你记一笔 🐈‍⬛</div>
+          <div class="focus-stats">
+            <span>☀️ 太阳币 <b id="focusCoins">0</b></span>
+            <button class="btn ghost mini-btn" id="btnFocusShop" type="button">去小铺 →</button>
+          </div>
+          <div class="focus-tip">每专注 5 分钟约赚 1 枚太阳币；连续专注会自动切换休息。停止正计时时按已完成时长结算。</div>
         </div>
       </div><!-- /miniFocus -->
 
@@ -321,6 +355,73 @@
           <div class="random-result" id="randomResult">命运还没有开口…</div>
         </div>
       </div><!-- /miniRandom -->
+
+      <div class="mini-panel" id="miniGpa" hidden>
+        <div class="mini-app-head">
+          <button class="mini-back" type="button" data-app-back="1">‹ 小程序</button>
+          <span>🧮 GPA 计算器</span>
+        </div>
+        <div class="gpa-card">
+          <div class="gpa-toolbar">
+            <span>课程 / 学分 / 成绩</span>
+            <button class="btn ghost mini-btn" id="btnAddGpaRow" type="button">＋ 添加课程</button>
+          </div>
+          <div class="gpa-rows" id="gpaRows"></div>
+          <div class="gpa-summary" id="gpaSummary">还没有成绩，添加一门课程吧</div>
+          <div class="gpa-note">按 4.0 绩点制估算：90+ = 4.0，85+ = 3.7，82+ = 3.3，78+ = 3.0，75+ = 2.7，72+ = 2.3，68+ = 2.0，64+ = 1.5，60+ = 1.0。仅供参考。</div>
+        </div>
+      </div><!-- /miniGpa -->
+
+      <div class="mini-panel" id="miniShop" hidden>
+        <div class="mini-app-head">
+          <button class="mini-back" type="button" data-app-back="1">‹ 小程序</button>
+          <span>🛍️ 太阳小铺</span>
+        </div>
+        <div class="shop-card">
+          <div class="shop-wallet">☀️ 太阳币 <b id="shopCoins">0</b><span>专注赚币，兑换喜欢的虚拟商品</span></div>
+          <div class="shop-grid" id="shopItems"></div>
+          <div class="shop-owned" id="shopOwned">还没有兑换商品</div>
+        </div>
+      </div><!-- /miniShop -->
+
+      <div class="mini-panel" id="miniSavings" hidden>
+        <div class="mini-app-head">
+          <button class="mini-back" type="button" data-app-back="1">‹ 小程序</button>
+          <span>🐖 攒钱计划</span>
+        </div>
+        <div class="savings-card">
+          <label class="field"><span class="field-label">计划名称</span><input class="input" id="savingsName" type="text" maxlength="20" placeholder="例如：相机 / 旅行 / 应急金" /></label>
+          <div class="savings-row">
+            <label class="field"><span class="field-label">目标金额</span><input class="input" id="savingsTarget" type="number" min="0" step="1" placeholder="3000" /></label>
+            <label class="field"><span class="field-label">已存</span><input class="input" id="savingsCurrent" type="number" min="0" step="1" placeholder="0" /></label>
+          </div>
+          <div class="savings-progress"><div id="savingsBar"></div></div>
+          <div class="savings-summary" id="savingsSummary">设一个目标，猫猫陪你慢慢存 🐈‍⬛</div>
+          <div class="savings-add-row">
+            <input class="input" id="savingsAdd" type="number" min="0" step="1" placeholder="这次存多少" />
+            <button class="btn primary mini-btn" id="btnSavingsAdd" type="button">存一笔</button>
+          </div>
+          <div class="savings-actions">
+            <button class="btn ghost mini-btn" id="btnSavingsReset" type="button">重置计划</button>
+          </div>
+        </div>
+      </div><!-- /miniSavings -->
+
+      <div class="mini-panel" id="miniMindmap" hidden>
+        <div class="mini-app-head">
+          <button class="mini-back" type="button" data-app-back="1">‹ 小程序</button>
+          <span>🧠 思维导图</span>
+        </div>
+        <div class="mind-card">
+          <div class="mind-toolbar">
+            <input class="input" id="mindTopic" type="text" maxlength="30" placeholder="中心主题，例如：高等数学第三章" />
+            <button class="btn primary mini-btn" id="btnMindAdd" type="button">＋ 分支</button>
+            <button class="btn ghost mini-btn" id="btnMindSave" type="button">保存</button>
+          </div>
+          <div class="mind-canvas" id="mindCanvas"></div>
+          <div class="mind-tip">每个分支可以继续添加子节点；点节点文字直接编辑，🗑 删除。</div>
+        </div>
+      </div><!-- /miniMindmap -->
 
       <div class="page-bottom-space"></div>
     </section>
@@ -369,6 +470,30 @@
         </div>
         <div class="format-hint">
           <strong>说明：</strong>PDF 必须是「文字版」（能选中文字）。扫描图片 PDF 没有文字层，会提示使用 OCR 或手动粘贴。识别结果会先预览，确认后再写入课表。
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span class="ph-emoji">📝</span>
+          <div class="ph-text">
+            <h2>📝 Word 课表扫描导入</h2>
+            <p>选择 .docx 课表，自动读取表格或文字并识别课程</p>
+          </div>
+        </div>
+        <div class="pdf-drop word-drop" id="wordDrop" tabindex="0" role="button" aria-label="选择 Word 课表文件">
+          <div class="pdf-drop-icon">📝</div>
+          <div class="pdf-drop-title" id="wordDropTitle">点击选择 Word 文件</div>
+          <div class="pdf-drop-sub" id="wordDropSub">支持 .docx · 文字版 · ≤ 20MB</div>
+          <input type="file" id="wordFileInput" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden />
+        </div>
+        <div class="pdf-status" id="wordStatus" hidden></div>
+        <div class="row-btns">
+          <button class="btn primary" id="btnPickWord" type="button">📝 选择 Word 课表</button>
+          <button class="btn ghost" id="btnWordHelp" type="button">Word 导入说明</button>
+        </div>
+        <div class="format-hint">
+          <strong>说明：</strong>支持 .docx（Word 2007+）的文字和表格。老式 .doc 或扫描图片 Word 请先另存为 .docx / PDF；图片版需要 OCR。
         </div>
       </div>
 
@@ -482,6 +607,13 @@
         <h3 class="section-title">🌅 早 / 晚自习</h3>
         <div id="selfStudyEditor"></div>
         <div class="remind-note">打开开关后，会在「太阳神的一天」显示自习地点与时间。</div>
+      </div>
+
+      <!-- 午休 / 晚饭 -->
+      <div class="section planner-section" id="mealSettingsSection">
+        <h3 class="section-title">🍜 午休 / 晚饭时间</h3>
+        <div id="mealBreakEditor"></div>
+        <div class="remind-note">会显示在课表上方和「太阳神的一天」课程列表里，提醒你吃饭休息。</div>
       </div>
 
       <!-- 假期 / 考试倒计时 -->
@@ -742,10 +874,19 @@
         <p class="about-small">支持小 / 中 / 大三种尺寸：小尺寸显示天气、下节课时间和地点；中尺寸显示今日 2 节课程；大尺寸显示完整今日课表。拖动小组件边缘即可调整大小。</p>
       </div>
 
+      <div class="section">
+        <h3 class="section-title">📥 Android 安装包</h3>
+        <p>不想用网页版？下载 APK，安装后还可以把「太阳神今日课表」放到手机桌面。</p>
+        <p class="about-small">Android 5.0+ · v2.4.0 · 安装前请先卸载旧版 2.0.x</p>
+        <div class="row-btns">
+          <a class="btn primary grow" href="download/sunny-timetable-v2.4.0.apk" download>📥 下载 APK</a>
+        </div>
+      </div>
+
       <div class="section about">
         <h3 class="section-title">🌻 关于太阳神的随身陪伴课程表</h3>
         <p>太阳神、猫猫和颜文字一起陪你上课。白黄是太阳，黑蓝是错误文档，都是今天的你。</p>
-        <p class="about-small">数据仅保存在本机 · 不收集任何个人信息 · v2.2.0 · ☀️🐈‍⬛⚠️</p>
+        <p class="about-small">数据仅保存在本机 · 不收集任何个人信息 · v2.4.0 · ☀️🐈‍⬛⚠️</p>
       </div>
 
       <div class="page-bottom-space"></div>
@@ -1029,10 +1170,17 @@
   <script src="js/rhythm.js"></script>
   <script src="js/planner.js"></script>
   <script src="js/miniapps.js"></script>
+  <script src="js/gpa.js"></script>
+  <script src="js/shop.js"></script>
+  <script src="js/savings.js"></script>
+  <script src="js/mindmap.js"></script>
   <script src="js/import-browser.js"></script>
+  <script src="js/word-import.js"></script>
   <script src="js/food.js"></script>
 </body>
 </html>
+
+
 
 
 

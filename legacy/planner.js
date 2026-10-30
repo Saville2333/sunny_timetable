@@ -171,9 +171,32 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
       }).join('') : '';
     }
   }
+  function weeksLabel(weeks) {
+    if (!weeks || !weeks.length) return '全部周';
+    try {
+      return Store.weeksText(weeks);
+    } catch (e) {
+      return weeks.join(',') + ' 周';
+    }
+  }
+  function isStudyThisWeek(item) {
+    if (!item || !item.weeks || !item.weeks.length) return true;
+    var week = Store.currentWeek();
+    return item.weeks.indexOf(week) >= 0;
+  }
+  function appendTodayExtra(html) {
+    var list = $('#todayList');
+    if (!list) return;
+    var wrap = document.createElement('div');
+    wrap.innerHTML = html;
+    while (wrap.firstChild) list.appendChild(wrap.firstChild);
+  }
+  function clearExtras(selector) {
+    H.$$('.extra-item' + (selector ? '.' + selector : '')).forEach(function (el) {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    });
+  }
   function renderSelfStudy() {
-    var box = $('#selfStudyList');
-    if (!box) return;
     var study = settings().selfStudy || {};
     var items = [{
       key: 'morning',
@@ -185,31 +208,82 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
       icon: '🌙',
       label: '晚自习',
       data: study.evening
-    }];
-    var enabled = items.filter(function (item) {
-      return item.data && item.data.enabled;
+    }].filter(function (item) {
+      return item.data && item.data.enabled && isStudyThisWeek(item.data);
     });
-    var stats = $('#selfStudyStats');
-    if (stats) stats.textContent = enabled.length ? enabled.length + ' 段' : '未开启';
-    if (!enabled.length) {
-      box.innerHTML = '<div class="planner-empty">在「小窝 → 早 / 晚自习」里开启并设置时间。</div>';
-      return;
-    }
-    var nowMin = new Date().getHours() * 60 + new Date().getMinutes();
-    box.innerHTML = enabled.map(function (item) {
+    clearExtras('study-extra');
+    if (!items.length) return;
+    appendTodayExtra(items.map(function (item) {
       var start = item.data.start || '--:--';
       var end = item.data.end || '--:--';
-      var s = U.timeToMinutes(start);
-      var e = U.timeToMinutes(end);
-      var state = 'later';
-      if (nowMin >= s && nowMin < e) state = 'now';else if (nowMin >= e) state = 'done';
-      return '<div class="self-study-row is-' + state + '">' + '<span class="ss-icon">' + item.icon + '</span>' + '<div class="ss-main"><b>' + item.label + '</b><small>' + esc(item.data.place || '') + '</small></div>' + '<span class="ss-time">' + esc(start) + ' - ' + esc(end) + '</span>' + (state === 'now' ? '<span class="ss-state">进行中</span>' : '') + '</div>';
+      return '<div class="today-item extra-item study-extra">' + '<div class="ti-time"><div class="ti-start">' + esc(start) + '</div><div class="ti-end">' + esc(end) + '</div></div>' + '<div class="ti-card extra-card study-card">' + '<div class="ti-head"><span class="ti-name">' + item.icon + ' ' + item.label + '</span>' + '<span class="ti-badge">' + esc(weeksLabel(item.data.weeks)) + '</span></div>' + '<div class="ti-meta">' + (item.data.place ? '<span>📍 ' + esc(item.data.place) + '</span>' : '') + '<span>🕯️ 自定义自习</span></div>' + '</div></div>';
+    }).join(''));
+  }
+  function renderMealBreaks() {
+    var breaks = settings().mealBreaks || {};
+    var items = [{
+      key: 'lunch',
+      icon: '🍜',
+      data: breaks.lunch
+    }, {
+      key: 'dinner',
+      icon: '🌙',
+      data: breaks.dinner
+    }].filter(function (item) {
+      return item.data && item.data.enabled;
+    });
+    clearExtras('meal-extra');
+    if (!items.length) return;
+    appendTodayExtra(items.map(function (item) {
+      return '<div class="today-item extra-item meal-extra">' + '<div class="ti-time"><div class="ti-start">' + esc(item.data.start) + '</div><div class="ti-end">' + esc(item.data.end) + '</div></div>' + '<div class="ti-card extra-card meal-card">' + '<div class="ti-head"><span class="ti-name">' + item.icon + ' ' + esc(item.data.label || '休息') + '</span></div>' + '<div class="ti-meta"><span>🍚 吃饭、喝水、休息一下</span></div>' + '</div></div>';
+    }).join(''));
+  }
+  function renderMealStrip() {
+    var box = $('#mealStrip');
+    if (!box) return;
+    var breaks = settings().mealBreaks || {};
+    var items = [{
+      icon: '🍜',
+      data: breaks.lunch
+    }, {
+      icon: '🌙',
+      data: breaks.dinner
+    }].filter(function (item) {
+      return item.data && item.data.enabled;
+    });
+    if (!items.length) {
+      box.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    box.hidden = false;
+    box.innerHTML = items.map(function (item) {
+      return '<span class="meal-pill">' + item.icon + ' ' + esc(item.data.label || '休息') + ' <b>' + esc(item.data.start) + ' - ' + esc(item.data.end) + '</b></span>';
+    }).join('');
+  }
+  function renderMealSettings() {
+    var box = $('#mealBreakEditor');
+    if (!box) return;
+    var breaks = settings().mealBreaks || {};
+    var items = [{
+      key: 'lunch',
+      icon: '🍜',
+      label: '午休'
+    }, {
+      key: 'dinner',
+      icon: '🌙',
+      label: '晚饭'
+    }];
+    box.innerHTML = items.map(function (item) {
+      var data = breaks[item.key] || {};
+      return '<div class="meal-edit">' + '<div class="sse-head"><span>' + item.icon + ' ' + item.label + '</span>' + '<label class="switch"><input type="checkbox" data-meal-enabled="' + item.key + '"' + (data.enabled !== false ? ' checked' : '') + ' /><span class="switch-track"><span class="switch-dot"></span></span></label></div>' + '<div class="sse-fields">' + '<input class="input compact" type="text" maxlength="8" data-meal-label="' + item.key + '" value="' + esc(data.label || item.label) + '" />' + '<input class="input compact time" type="time" data-meal-start="' + item.key + '" value="' + esc(data.start || '') + '" />' + '<span class="pr-dash">—</span>' + '<input class="input compact time" type="time" data-meal-end="' + item.key + '" value="' + esc(data.end || '') + '" />' + '</div></div>';
     }).join('');
   }
   function renderPlannerToday() {
     renderTodoList();
     renderCountdowns();
     renderSelfStudy();
+    renderMealBreaks();
   }
   function periodRow(index, time, total) {
     var duration = Math.max(0, U.timeToMinutes(time.end) - U.timeToMinutes(time.start));
@@ -245,7 +319,14 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
     }];
     box.innerHTML = items.map(function (item) {
       var data = study[item.key] || {};
-      return '<div class="self-study-edit">' + '<div class="sse-head"><span>' + item.icon + ' ' + item.label + '</span>' + '<label class="switch"><input type="checkbox" data-study-enabled="' + item.key + '"' + (data.enabled ? ' checked' : '') + ' /><span class="switch-track"><span class="switch-dot"></span></span></label></div>' + '<div class="sse-fields">' + '<input class="input compact time" type="time" data-study-start="' + item.key + '" value="' + esc(data.start || '') + '" />' + '<span class="pr-dash">—</span>' + '<input class="input compact time" type="time" data-study-end="' + item.key + '" value="' + esc(data.end || '') + '" />' + '<input class="input compact" type="text" maxlength="16" data-study-place="' + item.key + '" value="' + esc(data.place || '') + '" placeholder="地点" />' + '</div></div>';
+      var total = U.clampInt(settings().totalWeeks, 1, 30, 18);
+      var weeks = Array.isArray(data.weeks) ? data.weeks : [];
+      var all = !weeks.length;
+      var chips = '';
+      for (var w = 1; w <= total; w += 1) {
+        chips += '<button type="button" class="week-chip' + (all || weeks.indexOf(w) >= 0 ? ' is-on' : '') + '" data-study-week="' + item.key + '" data-week="' + w + '">' + w + '</button>';
+      }
+      return '<div class="self-study-edit">' + '<div class="sse-head"><span>' + item.icon + ' ' + item.label + '</span>' + '<label class="switch"><input type="checkbox" data-study-enabled="' + item.key + '"' + (data.enabled ? ' checked' : '') + ' /><span class="switch-track"><span class="switch-dot"></span></span></label></div>' + '<div class="sse-fields">' + '<input class="input compact time" type="time" data-study-start="' + item.key + '" value="' + esc(data.start || '') + '" />' + '<span class="pr-dash">—</span>' + '<input class="input compact time" type="time" data-study-end="' + item.key + '" value="' + esc(data.end || '') + '" />' + '<input class="input compact" type="text" maxlength="16" data-study-place="' + item.key + '" value="' + esc(data.place || '') + '" placeholder="地点" />' + '</div>' + '<div class="week-chip-label">所在周 · ' + (all ? '全部周' : weeksLabel(weeks)) + '</div>' + '<div class="week-chips">' + chips + '</div>' + '</div>';
     }).join('');
   }
   function renderCountdownSettings() {
@@ -457,6 +538,17 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
       App.renderToday();
     });
   }
+  function updateMeal(key, patch) {
+    var breaks = Object.assign({}, settings().mealBreaks || {});
+    breaks[key] = Object.assign({}, breaks[key] || {}, patch);
+    Store.updateSettings({
+      mealBreaks: breaks
+    }).then(function () {
+      renderMealSettings();
+      renderMealStrip();
+      App.renderToday();
+    });
+  }
   function closeTodoPopup() {
     var popup = $('#todoPopup');
     if (popup) popup.hidden = true;
@@ -623,6 +715,58 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
           place: place.value
         });
       });
+      study.addEventListener('click', function (e) {
+        var chip = e.target.closest('[data-study-week]');
+        if (!chip) return;
+        var key = chip.dataset.studyWeek;
+        var week = Number(chip.dataset.week);
+        var total = U.clampInt(settings().totalWeeks, 1, 30, 18);
+        var data = (settings().selfStudy || {})[key] || {};
+        var weeks = Array.isArray(data.weeks) ? data.weeks.slice() : [];
+        if (!weeks.length) {
+          for (var w = 1; w <= total; w += 1) weeks.push(w);
+        }
+        if (weeks.indexOf(week) >= 0) weeks = weeks.filter(function (w) {
+          return w !== week;
+        });else weeks.push(week);
+        weeks.sort(function (a, b) {
+          return a - b;
+        });
+        if (!weeks.length) weeks = [];
+        updateStudy(key, {
+          weeks: weeks
+        });
+      });
+    }
+    var meal = $('#mealBreakEditor');
+    if (meal) {
+      meal.addEventListener('change', function (e) {
+        var enabled = e.target.closest('[data-meal-enabled]');
+        if (enabled) {
+          updateMeal(enabled.dataset.mealEnabled, {
+            enabled: enabled.checked
+          });
+          return;
+        }
+        var label = e.target.closest('[data-meal-label]');
+        if (label) {
+          updateMeal(label.dataset.mealLabel, {
+            label: label.value
+          });
+          return;
+        }
+        var start = e.target.closest('[data-meal-start]');
+        if (start) {
+          updateMeal(start.dataset.mealStart, {
+            start: start.value
+          });
+          return;
+        }
+        var end = e.target.closest('[data-meal-end]');
+        if (end) updateMeal(end.dataset.mealEnd, {
+          end: end.value
+        });
+      });
     }
     var addCd = $('#btnAddCountdown');
     if (addCd) addCd.addEventListener('click', addCountdown);
@@ -686,6 +830,7 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
   App.renderPlannerSettings = function () {
     renderPeriodEditor();
     renderSelfStudyEditor();
+    renderMealSettings();
     renderCountdownSettings();
     renderCountdownPresets();
     var alpha = $('#setUiAlpha');
@@ -716,6 +861,7 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
   App.startPlanner = function () {
     this.applyUiAlpha();
     renderPlannerToday();
+    renderMealStrip();
     if (this._plannerTimer) clearInterval(this._plannerTimer);
     this._plannerTimer = setInterval(function () {
       checkHomeworkPrompt();
@@ -729,6 +875,11 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
   App.renderToday = function () {
     origRenderToday.apply(this, arguments);
     if (typeof this.renderPlannerToday === 'function') this.renderPlannerToday();
+  };
+  var origRenderSchedule = App.renderSchedule;
+  App.renderSchedule = function () {
+    origRenderSchedule.apply(this, arguments);
+    renderMealStrip();
   };
   var origRenderSettings = App.renderSettings;
   App.renderSettings = function () {

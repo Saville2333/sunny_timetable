@@ -1,5 +1,5 @@
 /* 太阳神的随身陪伴课程表 · 离线缓存 */
-const CACHE = 'sunny-timetable-v4';
+const CACHE = 'sunny-timetable-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -23,7 +23,12 @@ const ASSETS = [
   './js/food.js',
   './js/planner.js',
   './js/miniapps.js',
-  './js/import-browser.js'
+  './js/gpa.js',
+  './js/shop.js',
+  './js/savings.js',
+  './js/mindmap.js',
+  './js/import-browser.js',
+  './js/word-import.js'
 ];
 
 self.addEventListener('install', function (event) {

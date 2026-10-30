@@ -61,8 +61,17 @@
       return;
     }
     if (window.SunnyBrowser && typeof window.SunnyBrowser.open === 'function') {
-      window.SunnyBrowser.open(url);
-      UI.toast('登录后进入课表页，点右下角「检测课表」');
+      try {
+        window.SunnyBrowser.open(url);
+        UI.toast('登录后进入课表页，点右下角「检测课表」');
+        return;
+      } catch (e) {
+        console.warn('[Browser] JS 桥调用失败，尝试自定义协议', e);
+      }
+    }
+    if (location.protocol === 'file:') {
+      /* JS 桥不可用时的兜底：WebViewClient 拦截这个自定义协议 */
+      location.href = 'sunny://browser?url=' + encodeURIComponent(url);
       return;
     }
     UI.confirm({

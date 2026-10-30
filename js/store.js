@@ -427,8 +427,13 @@
       breakDuration: 10,
       /* 早/晚自习 */
       selfStudy: {
-        morning: { enabled: false, start: '07:30', end: '08:00', place: '教室' },
-        evening: { enabled: false, start: '19:00', end: '21:00', place: '图书馆' }
+        morning: { enabled: false, start: '07:30', end: '08:00', place: '教室', weeks: [] },
+        evening: { enabled: false, start: '19:00', end: '21:00', place: '图书馆', weeks: [] }
+      },
+      /* 午休 / 晚饭时间 */
+      mealBreaks: {
+        lunch: { enabled: true, start: '12:00', end: '14:00', label: '午休' },
+        dinner: { enabled: true, start: '17:40', end: '19:00', label: '晚饭' }
       },
       /* 倒计时：假期 / 考试 / 自定义 */
       countdowns: [],
@@ -497,8 +502,8 @@
 
   function normalizeSelfStudy(raw) {
     const base = {
-      morning: { enabled: false, start: '07:30', end: '08:00', place: '教室' },
-      evening: { enabled: false, start: '19:00', end: '21:00', place: '图书馆' }
+      morning: { enabled: false, start: '07:30', end: '08:00', place: '教室', weeks: [] },
+      evening: { enabled: false, start: '19:00', end: '21:00', place: '图书馆', weeks: [] }
     };
     if (!raw || typeof raw !== 'object') return base;
     ['morning', 'evening'].forEach(function (key) {
@@ -508,6 +513,28 @@
       if (/^\d{1,2}:\d{2}$/.test(String(item.start || ''))) base[key].start = String(item.start);
       if (/^\d{1,2}:\d{2}$/.test(String(item.end || ''))) base[key].end = String(item.end);
       base[key].place = str(item.place, 16) || base[key].place;
+      base[key].weeks = Array.isArray(item.weeks)
+        ? item.weeks.map(function (w) { return clampInt(w, 1, 30, 1); })
+          .filter(function (w, i, arr) { return arr.indexOf(w) === i; })
+          .sort(function (a, b) { return a - b; })
+        : [];
+    });
+    return base;
+  }
+
+  function normalizeMealBreaks(raw) {
+    const base = {
+      lunch: { enabled: true, start: '12:00', end: '14:00', label: '午休' },
+      dinner: { enabled: true, start: '17:40', end: '19:00', label: '晚饭' }
+    };
+    if (!raw || typeof raw !== 'object') return base;
+    ['lunch', 'dinner'].forEach(function (key) {
+      const item = raw[key];
+      if (!item || typeof item !== 'object') return;
+      base[key].enabled = item.enabled !== false;
+      if (/^\d{1,2}:\d{2}$/.test(String(item.start || ''))) base[key].start = String(item.start);
+      if (/^\d{1,2}:\d{2}$/.test(String(item.end || ''))) base[key].end = String(item.end);
+      base[key].label = str(item.label, 8) || base[key].label;
     });
     return base;
   }
@@ -680,6 +707,7 @@
       base.classDuration = clampInt(base.classDuration, 20, 180, 45);
       base.breakDuration = clampInt(base.breakDuration, 0, 60, 10);
       base.selfStudy = normalizeSelfStudy(base.selfStudy);
+      base.mealBreaks = normalizeMealBreaks(base.mealBreaks);
       base.countdowns = Array.isArray(base.countdowns) ? base.countdowns.map(normalizeCountdown).filter(Boolean) : [];
       base.todos = Array.isArray(base.todos) ? base.todos.map(normalizeTodo).filter(Boolean) : [];
       base.uiAlpha = Math.max(0.45, Math.min(1, Number(base.uiAlpha) || 0.93));

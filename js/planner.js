@@ -173,36 +173,113 @@
     }
   }
 
+  function weeksLabel(weeks) {
+    if (!weeks || !weeks.length) return '全部周';
+    try { return Store.weeksText(weeks); } catch (e) { return weeks.join(',') + ' 周'; }
+  }
+
+  function isStudyThisWeek(item) {
+    if (!item || !item.weeks || !item.weeks.length) return true;
+    const week = Store.currentWeek();
+    return item.weeks.indexOf(week) >= 0;
+  }
+
+  function appendTodayExtra(html) {
+    const list = $('#todayList');
+    if (!list) return;
+    const wrap = document.createElement('div');
+    wrap.innerHTML = html;
+    while (wrap.firstChild) list.appendChild(wrap.firstChild);
+  }
+
+  function clearExtras(selector) {
+    H.$$('.extra-item' + (selector ? '.' + selector : '')).forEach(function (el) {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    });
+  }
+
   function renderSelfStudy() {
-    const box = $('#selfStudyList');
-    if (!box) return;
     const study = settings().selfStudy || {};
     const items = [
       { key: 'morning', icon: '🌅', label: '早自习', data: study.morning },
       { key: 'evening', icon: '🌙', label: '晚自习', data: study.evening }
-    ];
-    const enabled = items.filter(function (item) { return item.data && item.data.enabled; });
-    const stats = $('#selfStudyStats');
-    if (stats) stats.textContent = enabled.length ? enabled.length + ' 段' : '未开启';
-    if (!enabled.length) {
-      box.innerHTML = '<div class="planner-empty">在「小窝 → 早 / 晚自习」里开启并设置时间。</div>';
-      return;
-    }
-    const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
-    box.innerHTML = enabled.map(function (item) {
+    ].filter(function (item) {
+      return item.data && item.data.enabled && isStudyThisWeek(item.data);
+    });
+    clearExtras('study-extra');
+    if (!items.length) return;
+    appendTodayExtra(items.map(function (item) {
       const start = item.data.start || '--:--';
       const end = item.data.end || '--:--';
-      const s = U.timeToMinutes(start);
-      const e = U.timeToMinutes(end);
-      let state = 'later';
-      if (nowMin >= s && nowMin < e) state = 'now';
-      else if (nowMin >= e) state = 'done';
-      return '<div class="self-study-row is-' + state + '">' +
-        '<span class="ss-icon">' + item.icon + '</span>' +
-        '<div class="ss-main"><b>' + item.label + '</b><small>' + esc(item.data.place || '') + '</small></div>' +
-        '<span class="ss-time">' + esc(start) + ' - ' + esc(end) + '</span>' +
-        (state === 'now' ? '<span class="ss-state">进行中</span>' : '') +
-        '</div>';
+      return '<div class="today-item extra-item study-extra">' +
+        '<div class="ti-time"><div class="ti-start">' + esc(start) + '</div><div class="ti-end">' + esc(end) + '</div></div>' +
+        '<div class="ti-card extra-card study-card">' +
+        '<div class="ti-head"><span class="ti-name">' + item.icon + ' ' + item.label + '</span>' +
+        '<span class="ti-badge">' + esc(weeksLabel(item.data.weeks)) + '</span></div>' +
+        '<div class="ti-meta">' + (item.data.place ? '<span>📍 ' + esc(item.data.place) + '</span>' : '') +
+        '<span>🕯️ 自定义自习</span></div>' +
+        '</div></div>';
+    }).join(''));
+  }
+
+  function renderMealBreaks() {
+    const breaks = settings().mealBreaks || {};
+    const items = [
+      { key: 'lunch', icon: '🍜', data: breaks.lunch },
+      { key: 'dinner', icon: '🌙', data: breaks.dinner }
+    ].filter(function (item) { return item.data && item.data.enabled; });
+    clearExtras('meal-extra');
+    if (!items.length) return;
+    appendTodayExtra(items.map(function (item) {
+      return '<div class="today-item extra-item meal-extra">' +
+        '<div class="ti-time"><div class="ti-start">' + esc(item.data.start) + '</div><div class="ti-end">' + esc(item.data.end) + '</div></div>' +
+        '<div class="ti-card extra-card meal-card">' +
+        '<div class="ti-head"><span class="ti-name">' + item.icon + ' ' + esc(item.data.label || '休息') + '</span></div>' +
+        '<div class="ti-meta"><span>🍚 吃饭、喝水、休息一下</span></div>' +
+        '</div></div>';
+    }).join(''));
+  }
+
+  function renderMealStrip() {
+    const box = $('#mealStrip');
+    if (!box) return;
+    const breaks = settings().mealBreaks || {};
+    const items = [
+      { icon: '🍜', data: breaks.lunch },
+      { icon: '🌙', data: breaks.dinner }
+    ].filter(function (item) { return item.data && item.data.enabled; });
+    if (!items.length) {
+      box.hidden = true;
+      box.innerHTML = '';
+      return;
+    }
+    box.hidden = false;
+    box.innerHTML = items.map(function (item) {
+      return '<span class="meal-pill">' + item.icon + ' ' + esc(item.data.label || '休息') +
+        ' <b>' + esc(item.data.start) + ' - ' + esc(item.data.end) + '</b></span>';
+    }).join('');
+  }
+
+  function renderMealSettings() {
+    const box = $('#mealBreakEditor');
+    if (!box) return;
+    const breaks = settings().mealBreaks || {};
+    const items = [
+      { key: 'lunch', icon: '🍜', label: '午休' },
+      { key: 'dinner', icon: '🌙', label: '晚饭' }
+    ];
+    box.innerHTML = items.map(function (item) {
+      const data = breaks[item.key] || {};
+      return '<div class="meal-edit">' +
+        '<div class="sse-head"><span>' + item.icon + ' ' + item.label + '</span>' +
+        '<label class="switch"><input type="checkbox" data-meal-enabled="' + item.key + '"' +
+        (data.enabled !== false ? ' checked' : '') + ' /><span class="switch-track"><span class="switch-dot"></span></span></label></div>' +
+        '<div class="sse-fields">' +
+        '<input class="input compact" type="text" maxlength="8" data-meal-label="' + item.key + '" value="' + esc(data.label || item.label) + '" />' +
+        '<input class="input compact time" type="time" data-meal-start="' + item.key + '" value="' + esc(data.start || '') + '" />' +
+        '<span class="pr-dash">—</span>' +
+        '<input class="input compact time" type="time" data-meal-end="' + item.key + '" value="' + esc(data.end || '') + '" />' +
+        '</div></div>';
     }).join('');
   }
 
@@ -210,6 +287,7 @@
     renderTodoList();
     renderCountdowns();
     renderSelfStudy();
+    renderMealBreaks();
   }
 
   function periodRow(index, time, total) {
@@ -249,6 +327,14 @@
     ];
     box.innerHTML = items.map(function (item) {
       const data = study[item.key] || {};
+      const total = U.clampInt(settings().totalWeeks, 1, 30, 18);
+      const weeks = Array.isArray(data.weeks) ? data.weeks : [];
+      const all = !weeks.length;
+      let chips = '';
+      for (let w = 1; w <= total; w += 1) {
+        chips += '<button type="button" class="week-chip' + (all || weeks.indexOf(w) >= 0 ? ' is-on' : '') +
+          '" data-study-week="' + item.key + '" data-week="' + w + '">' + w + '</button>';
+      }
       return '<div class="self-study-edit">' +
         '<div class="sse-head"><span>' + item.icon + ' ' + item.label + '</span>' +
         '<label class="switch"><input type="checkbox" data-study-enabled="' + item.key + '"' +
@@ -258,7 +344,10 @@
         '<span class="pr-dash">—</span>' +
         '<input class="input compact time" type="time" data-study-end="' + item.key + '" value="' + esc(data.end || '') + '" />' +
         '<input class="input compact" type="text" maxlength="16" data-study-place="' + item.key + '" value="' + esc(data.place || '') + '" placeholder="地点" />' +
-        '</div></div>';
+        '</div>' +
+        '<div class="week-chip-label">所在周 · ' + (all ? '全部周' : weeksLabel(weeks)) + '</div>' +
+        '<div class="week-chips">' + chips + '</div>' +
+        '</div>';
     }).join('');
   }
 
@@ -430,6 +519,16 @@
     });
   }
 
+  function updateMeal(key, patch) {
+    const breaks = Object.assign({}, settings().mealBreaks || {});
+    breaks[key] = Object.assign({}, breaks[key] || {}, patch);
+    Store.updateSettings({ mealBreaks: breaks }).then(function () {
+      renderMealSettings();
+      renderMealStrip();
+      App.renderToday();
+    });
+  }
+
   function closeTodoPopup() {
     const popup = $('#todoPopup');
     if (popup) popup.hidden = true;
@@ -571,6 +670,40 @@
         const place = e.target.closest('[data-study-place]');
         if (place) updateStudy(place.dataset.studyPlace, { place: place.value });
       });
+      study.addEventListener('click', function (e) {
+        const chip = e.target.closest('[data-study-week]');
+        if (!chip) return;
+        const key = chip.dataset.studyWeek;
+        const week = Number(chip.dataset.week);
+        const total = U.clampInt(settings().totalWeeks, 1, 30, 18);
+        const data = (settings().selfStudy || {})[key] || {};
+        let weeks = Array.isArray(data.weeks) ? data.weeks.slice() : [];
+        if (!weeks.length) {
+          for (let w = 1; w <= total; w += 1) weeks.push(w);
+        }
+        if (weeks.indexOf(week) >= 0) weeks = weeks.filter(function (w) { return w !== week; });
+        else weeks.push(week);
+        weeks.sort(function (a, b) { return a - b; });
+        if (!weeks.length) weeks = [];
+        updateStudy(key, { weeks: weeks });
+      });
+    }
+
+    const meal = $('#mealBreakEditor');
+    if (meal) {
+      meal.addEventListener('change', function (e) {
+        const enabled = e.target.closest('[data-meal-enabled]');
+        if (enabled) {
+          updateMeal(enabled.dataset.mealEnabled, { enabled: enabled.checked });
+          return;
+        }
+        const label = e.target.closest('[data-meal-label]');
+        if (label) { updateMeal(label.dataset.mealLabel, { label: label.value }); return; }
+        const start = e.target.closest('[data-meal-start]');
+        if (start) { updateMeal(start.dataset.mealStart, { start: start.value }); return; }
+        const end = e.target.closest('[data-meal-end]');
+        if (end) updateMeal(end.dataset.mealEnd, { end: end.value });
+      });
     }
 
     const addCd = $('#btnAddCountdown');
@@ -633,6 +766,7 @@
   App.renderPlannerSettings = function () {
     renderPeriodEditor();
     renderSelfStudyEditor();
+    renderMealSettings();
     renderCountdownSettings();
     renderCountdownPresets();
     const alpha = $('#setUiAlpha');
@@ -664,6 +798,7 @@
   App.startPlanner = function () {
     this.applyUiAlpha();
     renderPlannerToday();
+    renderMealStrip();
     if (this._plannerTimer) clearInterval(this._plannerTimer);
     this._plannerTimer = setInterval(function () {
       checkHomeworkPrompt();
@@ -677,6 +812,12 @@
   App.renderToday = function () {
     origRenderToday.apply(this, arguments);
     if (typeof this.renderPlannerToday === 'function') this.renderPlannerToday();
+  };
+
+  const origRenderSchedule = App.renderSchedule;
+  App.renderSchedule = function () {
+    origRenderSchedule.apply(this, arguments);
+    renderMealStrip();
   };
 
   const origRenderSettings = App.renderSettings;
